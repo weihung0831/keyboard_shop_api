@@ -13,18 +13,22 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('name')->comment('會員姓名');
+            $table->string('email')->unique()->comment('Email (登入帳號)');
+            $table->timestamp('email_verified_at')->nullable()->comment('Email 驗證時間');
+            $table->string('password')->comment('密碼 (bcrypt 加密)');
+            $table->string('phone', 20)->nullable()->comment('電話號碼');
+            $table->text('address')->nullable()->comment('地址');
             $table->rememberToken();
             $table->timestamps();
+
+            $table->index('created_at');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email')->primary();
-            $table->string('token');
-            $table->timestamp('created_at')->nullable();
+            $table->string('email')->primary()->comment('Email');
+            $table->string('token')->comment('重置密碼 Token');
+            $table->timestamp('created_at')->nullable()->comment('建立時間');
         });
 
         Schema::create('sessions', function (Blueprint $table) {
