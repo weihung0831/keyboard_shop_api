@@ -30,9 +30,6 @@ class ProductCategoryResource extends JsonResource
             // 分類描述
             'description' => $this->description,
 
-            // 分類圖片 URL
-            'image_url' => $this->image_url,
-
             // 是否啟用
             'is_active' => (bool) $this->is_active,
 

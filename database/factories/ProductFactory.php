@@ -188,9 +188,9 @@ class ProductFactory extends Factory
             'specifications' => [
                 '品牌' => $brand,
                 '主題' => $theme,
+                '軸體' => '適用 MX 相容軸',
                 '材質' => $material,
-                '高度' => $profile,
-                '鍵數' => fake()->randomElement(['104鍵', '108鍵', '129鍵', '139鍵']),
+                '配置' => fake()->randomElement(['104鍵', '108鍵', '129鍵', '139鍵']),
                 '相容性' => 'Cherry MX 及相容軸體',
                 '包裝內容' => '鍵帽組 + 收納盒',
             ],
@@ -230,8 +230,9 @@ class ProductFactory extends Factory
             'specifications' => [
                 '品牌' => $brand,
                 '型號' => $type,
+                '軸體' => "{$brand} {$type}",
                 '類型' => $switchType,
-                '數量' => $quantity,
+                '配置' => $quantity,
                 '觸發力度' => fake()->numberBetween(35, 67) . 'g',
                 '觸發行程' => fake()->randomFloat(1, 1.8, 2.2) . 'mm',
                 '總行程' => fake()->randomFloat(1, 3.5, 4.0) . 'mm',
@@ -269,6 +270,8 @@ class ProductFactory extends Factory
             'specifications' => [
                 '類型' => $typeName,
                 '品牌/款式' => $brand,
+                '軸體' => '通用配件',
+                '配置' => '通用',
                 '適用範圍' => '通用 / 機械鍵盤',
             ],
             'is_active' => fake()->boolean(95),
@@ -306,6 +309,7 @@ class ProductFactory extends Factory
             'specifications' => [
                 '品牌' => $brand,
                 '型號' => $kit,
+                '軸體' => '客製套件（不含軸體）',
                 '配置' => $layout,
                 '外殼材質' => $material,
                 '定位板' => $plate,

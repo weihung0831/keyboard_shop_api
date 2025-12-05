@@ -19,7 +19,6 @@ class ProductCategory extends Model
         'name',
         'slug',
         'description',
-        'image_url',
         'is_active',
         'sort_order',
     ];
