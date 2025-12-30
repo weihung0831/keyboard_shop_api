@@ -6,6 +6,8 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\Product\ProductController;
 use App\Http\Controllers\Category\CategoryController;
+use App\Http\Controllers\Cart\CartController;
+use App\Http\Controllers\Order\OrderController;
 
 /**
  * API Version 1 路由定義
@@ -86,5 +88,66 @@ Route::prefix('v1')->group(function () {
 
         // 取得單一產品詳情（by ID 或 slug）
         Route::get('/{idOrSlug}', [ProductController::class, 'show'])->name('api.products.show');
+    });
+
+    /**
+     * 購物車相關（支援會員和訪客）
+     * 會員使用 Bearer Token 認證
+     * 訪客使用 X-Session-Id Header
+     */
+    Route::prefix('cart')->group(function () {
+        // 取得購物車
+        Route::get('/', [CartController::class, 'index'])
+            ->name('api.cart.index');
+
+        // 加入購物車
+        Route::post('/items', [CartController::class, 'addItem'])
+            ->name('api.cart.add-item');
+
+        // 更新購物車項目數量
+        Route::put('/items/{id}', [CartController::class, 'updateItem'])
+            ->name('api.cart.update-item');
+
+        // 移除購物車項目
+        Route::delete('/items/{id}', [CartController::class, 'removeItem'])
+            ->name('api.cart.remove-item');
+
+        // 清空購物車
+        Route::delete('/', [CartController::class, 'clear'])
+            ->name('api.cart.clear');
+    });
+
+    /**
+     * 購物車合併（需要認證）
+     */
+    Route::middleware('auth:sanctum')->group(function () {
+        // 合併購物車（登入後呼叫）
+        Route::post('/cart/merge', [CartController::class, 'merge'])
+            ->name('api.cart.merge');
+
+        /**
+         * 訂單相關（需要認證）
+         */
+        Route::prefix('orders')->group(function () {
+            // 取得訂單列表
+            Route::get('/', [OrderController::class, 'index'])
+                ->name('api.orders.index');
+
+            // 取得訂單統計
+            Route::get('/stats', [OrderController::class, 'stats'])
+                ->name('api.orders.stats');
+
+            // 建立訂單
+            Route::post('/', [OrderController::class, 'store'])
+                ->name('api.orders.store');
+
+            // 取得訂單詳情
+            Route::get('/{id}', [OrderController::class, 'show'])
+                ->name('api.orders.show');
+
+            // 取消訂單
+            Route::put('/{id}/cancel', [OrderController::class, 'cancel'])
+                ->name('api.orders.cancel');
+        });
     });
 });
