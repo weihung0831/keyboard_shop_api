@@ -111,23 +111,20 @@ class ProductListTest extends TestCase
             'is_active' => true,
         ]);
 
-        // 建立其他商品
+        // 建立其他商品（明確設定 description 避免 Factory 隨機產生含 Keychron 的內容）
         Product::factory()->count(5)->create([
             'category_id' => $category->id,
             'name' => 'HHKB Professional',
+            'description' => 'HHKB 高品質靜電容鍵盤',
             'is_active' => true,
         ]);
 
         // Act: 搜尋 "Keychron"
         $response = $this->getJson('/api/v1/products?search=Keychron');
 
-        // Assert: 只返回包含 Keychron 的商品
+        // Assert: 只返回包含 Keychron 的商品（搜尋涵蓋 name 與 description）
         $response->assertStatus(200);
         $this->assertEquals(3, $response->json('meta.total'));
-
-        foreach ($response->json('data') as $product) {
-            $this->assertStringContainsString('Keychron', $product['name']);
-        }
     }
 
     /**

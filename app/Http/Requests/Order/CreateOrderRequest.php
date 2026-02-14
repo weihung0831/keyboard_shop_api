@@ -45,7 +45,7 @@ class CreateOrderRequest extends FormRequest
             'shipping_address' => ['required', 'string', 'max:200'],
 
             // 運送方式：選填，限定值
-            'shipping_method' => ['nullable', 'string', 'in:standard,express,convenience'],
+            'shipping_method' => ['nullable', 'string', 'in:standard,express,store_pickup'],
 
             // 訂單備註：選填，字串，最多 500 字元
             'notes' => ['nullable', 'string', 'max:500'],

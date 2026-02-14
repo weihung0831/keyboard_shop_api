@@ -285,8 +285,8 @@ class OrderCreateTest extends TestCase
         $response = $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/orders', $data);
 
-        // Assert: express 運費 120
+        // Assert: express 運費 150
         $response->assertStatus(201)
-            ->assertJsonPath('data.shipping_fee', 120);
+            ->assertJsonPath('data.shipping_fee', 150);
     }
 }

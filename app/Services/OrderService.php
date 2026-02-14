@@ -216,7 +216,8 @@ class OrderService
             'status' => 'created',
             'label' => '訂單建立',
             'time' => $order->created_at->toIso8601String(),
-            'completed' => true,
+            'is_completed' => true,
+            'is_current' => $order->status === Order::STATUS_PENDING,
         ];
 
         // 已付款
@@ -225,14 +226,16 @@ class OrderService
                 'status' => Order::STATUS_PROCESSING,
                 'label' => '已付款',
                 'time' => $order->paid_at->toIso8601String(),
-                'completed' => true,
+                'is_completed' => true,
+                'is_current' => $order->status === Order::STATUS_PROCESSING,
             ];
         } else {
             $timeline[] = [
                 'status' => Order::STATUS_PROCESSING,
                 'label' => '待付款',
                 'time' => null,
-                'completed' => false,
+                'is_completed' => false,
+                'is_current' => false,
             ];
         }
 
@@ -242,14 +245,16 @@ class OrderService
                 'status' => Order::STATUS_SHIPPED,
                 'label' => '已出貨',
                 'time' => $order->shipped_at->toIso8601String(),
-                'completed' => true,
+                'is_completed' => true,
+                'is_current' => $order->status === Order::STATUS_SHIPPED,
             ];
         } elseif ($order->status !== Order::STATUS_CANCELLED) {
             $timeline[] = [
                 'status' => Order::STATUS_SHIPPED,
                 'label' => '待出貨',
                 'time' => null,
-                'completed' => false,
+                'is_completed' => false,
+                'is_current' => false,
             ];
         }
 
@@ -259,14 +264,16 @@ class OrderService
                 'status' => Order::STATUS_COMPLETED,
                 'label' => '已完成',
                 'time' => $order->completed_at->toIso8601String(),
-                'completed' => true,
+                'is_completed' => true,
+                'is_current' => $order->status === Order::STATUS_COMPLETED,
             ];
         } elseif ($order->status !== Order::STATUS_CANCELLED) {
             $timeline[] = [
                 'status' => Order::STATUS_COMPLETED,
                 'label' => '待完成',
                 'time' => null,
-                'completed' => false,
+                'is_completed' => false,
+                'is_current' => false,
             ];
         }
 
@@ -276,7 +283,8 @@ class OrderService
                 'status' => Order::STATUS_CANCELLED,
                 'label' => '已取消',
                 'time' => $order->cancelled_at->toIso8601String(),
-                'completed' => true,
+                'is_completed' => true,
+                'is_current' => $order->status === Order::STATUS_CANCELLED,
             ];
         }
 
@@ -314,9 +322,9 @@ class OrderService
     {
         // 運費設定（可依需求調整或從設定檔讀取）
         $shipping_fees = [
-            'standard' => 60,      // 標準配送
-            'express' => 120,      // 快速配送
-            'convenience' => 60,   // 超商取貨
+            'standard' => 60,       // 標準配送
+            'express' => 150,       // 快速配送
+            'store_pickup' => 0,    // 門市取貨
         ];
 
         return $shipping_fees[$shipping_method] ?? 60;

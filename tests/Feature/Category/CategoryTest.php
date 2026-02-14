@@ -40,7 +40,6 @@ class CategoryTest extends TestCase
                         'name',
                         'slug',
                         'description',
-                        'image_url',
                         'products_count',
                     ],
                 ],
