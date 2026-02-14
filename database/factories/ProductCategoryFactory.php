@@ -33,9 +33,8 @@ class ProductCategoryFactory extends Factory
 
         return [
             'name' => $name,
-            'slug' => Str::slug($name) . '-' . fake()->unique()->numberBetween(1, 9999),
+            'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1, 9999),
             'description' => fake()->sentence(10),
-            'image_url' => fake()->optional(0.7)->imageUrl(640, 480, 'keyboard', true),
             'is_active' => fake()->boolean(90), // 90% 啟用
             'sort_order' => fake()->numberBetween(0, 100),
         ];

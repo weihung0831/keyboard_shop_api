@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Cart;
 use App\Models\Order;
+use App\Models\Product;
 use App\Repositories\CartRepository;
 use App\Repositories\OrderRepository;
 use App\Repositories\ProductRepository;
@@ -56,9 +57,10 @@ class OrderService
      * 建立訂單
      * 從購物車建立訂單，並清空購物車
      *
-     * @param int $user_id 會員 ID
-     * @param array $shipping_data 收件資訊
+     * @param  int  $user_id  會員 ID
+     * @param  array  $shipping_data  收件資訊
      * @return Order 新建立的訂單
+     *
      * @throws InvalidArgumentException 當購物車為空或庫存不足時
      */
     public function createOrder(int $user_id, array $shipping_data): Order
@@ -68,13 +70,13 @@ class OrderService
             $cart = $this->cart_repository->findByUserId($user_id);
 
             // 驗證購物車不為空
-            if (!$cart || $cart->items->isEmpty()) {
+            if (! $cart || $cart->items->isEmpty()) {
                 throw new InvalidArgumentException('購物車是空的，無法建立訂單');
             }
 
             // 驗證所有商品庫存
             $stock_errors = $this->cart_service->validateCartStock($cart);
-            if (!empty($stock_errors)) {
+            if (! empty($stock_errors)) {
                 throw new InvalidArgumentException(json_encode([
                     'message' => '部分商品庫存不足',
                     'items' => $stock_errors,
@@ -102,7 +104,7 @@ class OrderService
                 'notes' => $shipping_data['notes'] ?? null,
             ]);
 
-            // 建立訂單項目（儲存商品快照）
+            // 建立訂單項目（儲存商品快照）並扣減庫存
             $order_items = [];
             foreach ($cart->items as $cart_item) {
                 $product = $cart_item->product;
@@ -113,6 +115,9 @@ class OrderService
                     'quantity' => $cart_item->quantity,
                     'price' => $cart_item->price,
                 ];
+
+                // 扣減庫存
+                $product->decrement('stock', $cart_item->quantity);
             }
             $this->order_repository->createItems($order, $order_items);
 
@@ -127,9 +132,9 @@ class OrderService
     /**
      * 取得會員訂單列表
      *
-     * @param int $user_id 會員 ID
-     * @param array $filters 篩選條件 (status, start_date, end_date)
-     * @param int $per_page 每頁筆數
+     * @param  int  $user_id  會員 ID
+     * @param  array  $filters  篩選條件 (status, start_date, end_date)
+     * @param  int  $per_page  每頁筆數
      * @return LengthAwarePaginator 分頁結果
      */
     public function getOrderList(int $user_id, array $filters = [], int $per_page = 10): LengthAwarePaginator
@@ -143,16 +148,17 @@ class OrderService
     /**
      * 取得訂單詳情
      *
-     * @param int $order_id 訂單 ID
-     * @param int $user_id 會員 ID（用於權限驗證）
+     * @param  int  $order_id  訂單 ID
+     * @param  int  $user_id  會員 ID（用於權限驗證）
      * @return Order 訂單物件
+     *
      * @throws InvalidArgumentException 當訂單不存在或無權限時
      */
     public function getOrderDetail(int $order_id, int $user_id): Order
     {
         $order = $this->order_repository->findById($order_id, $user_id);
 
-        if (!$order) {
+        if (! $order) {
             throw new InvalidArgumentException('訂單不存在或無權限查看');
         }
 
@@ -162,9 +168,10 @@ class OrderService
     /**
      * 取消訂單
      *
-     * @param int $order_id 訂單 ID
-     * @param int $user_id 會員 ID（用於權限驗證）
+     * @param  int  $order_id  訂單 ID
+     * @param  int  $user_id  會員 ID（用於權限驗證）
      * @return Order 更新後的訂單
+     *
      * @throws InvalidArgumentException 當訂單不存在、無權限或無法取消時
      */
     public function cancelOrder(int $order_id, int $user_id): Order
@@ -172,23 +179,32 @@ class OrderService
         // 取得訂單
         $order = $this->order_repository->findById($order_id, $user_id);
 
-        if (!$order) {
+        if (! $order) {
             throw new InvalidArgumentException('訂單不存在或無權限操作');
         }
 
         // 驗證訂單是否可取消
-        if (!$order->canBeCancelled()) {
+        if (! $order->canBeCancelled()) {
             throw new InvalidArgumentException('僅待付款訂單可取消');
         }
 
-        // 取消訂單
-        return $this->order_repository->cancel($order);
+        // 回補庫存並取消訂單（使用 Transaction 確保原子性）
+        return DB::transaction(function () use ($order) {
+            foreach ($order->items as $item) {
+                if ($item->product_id) {
+                    Product::where('id', $item->product_id)
+                        ->increment('stock', $item->quantity);
+                }
+            }
+
+            return $this->order_repository->cancel($order);
+        });
     }
 
     /**
      * 取得訂單時間軸
      *
-     * @param Order $order 訂單物件
+     * @param  Order  $order  訂單物件
      * @return array 時間軸資料
      */
     public function getOrderTimeline(Order $order): array
@@ -270,8 +286,8 @@ class OrderService
     /**
      * 計算訂單金額
      *
-     * @param Cart $cart 購物車物件
-     * @param float $shipping_fee 運費
+     * @param  Cart  $cart  購物車物件
+     * @param  float  $shipping_fee  運費
      * @return array 金額資料 (subtotal, shipping_fee, total_amount)
      */
     public function calculateOrderTotals(Cart $cart, float $shipping_fee = 0): array
@@ -291,7 +307,7 @@ class OrderService
     /**
      * 計算運費
      *
-     * @param string $shipping_method 運送方式
+     * @param  string  $shipping_method  運送方式
      * @return float 運費金額
      */
     public function calculateShippingFee(string $shipping_method): float
@@ -309,8 +325,8 @@ class OrderService
     /**
      * 統計會員訂單數量
      *
-     * @param int $user_id 會員 ID
-     * @param string|null $status 訂單狀態篩選（可選）
+     * @param  int  $user_id  會員 ID
+     * @param  string|null  $status  訂單狀態篩選（可選）
      * @return int 訂單數量
      */
     public function countUserOrders(int $user_id, ?string $status = null): int
@@ -321,7 +337,7 @@ class OrderService
     /**
      * 取得會員訂單統計
      *
-     * @param int $user_id 會員 ID
+     * @param  int  $user_id  會員 ID
      * @return array 統計資料
      */
     public function getUserOrderStats(int $user_id): array
@@ -339,8 +355,8 @@ class OrderService
     /**
      * 驗證訂單是否屬於指定會員
      *
-     * @param int $order_id 訂單 ID
-     * @param int $user_id 會員 ID
+     * @param  int  $order_id  訂單 ID
+     * @param  int  $user_id  會員 ID
      * @return bool 是否屬於該會員
      */
     public function verifyOrderOwnership(int $order_id, int $user_id): bool
@@ -351,15 +367,16 @@ class OrderService
     /**
      * 標記訂單為已付款（供後台或金流回調使用）
      *
-     * @param int $order_id 訂單 ID
+     * @param  int  $order_id  訂單 ID
      * @return Order 更新後的訂單
+     *
      * @throws InvalidArgumentException 當訂單不存在或狀態不正確時
      */
     public function markOrderAsPaid(int $order_id): Order
     {
         $order = $this->order_repository->findById($order_id);
 
-        if (!$order) {
+        if (! $order) {
             throw new InvalidArgumentException('訂單不存在');
         }
 
@@ -373,15 +390,16 @@ class OrderService
     /**
      * 標記訂單為已出貨（供後台使用）
      *
-     * @param int $order_id 訂單 ID
+     * @param  int  $order_id  訂單 ID
      * @return Order 更新後的訂單
+     *
      * @throws InvalidArgumentException 當訂單不存在或狀態不正確時
      */
     public function markOrderAsShipped(int $order_id): Order
     {
         $order = $this->order_repository->findById($order_id);
 
-        if (!$order) {
+        if (! $order) {
             throw new InvalidArgumentException('訂單不存在');
         }
 
@@ -395,15 +413,16 @@ class OrderService
     /**
      * 標記訂單為已完成（供後台使用）
      *
-     * @param int $order_id 訂單 ID
+     * @param  int  $order_id  訂單 ID
      * @return Order 更新後的訂單
+     *
      * @throws InvalidArgumentException 當訂單不存在或狀態不正確時
      */
     public function markOrderAsCompleted(int $order_id): Order
     {
         $order = $this->order_repository->findById($order_id);
 
-        if (!$order) {
+        if (! $order) {
             throw new InvalidArgumentException('訂單不存在');
         }
 
