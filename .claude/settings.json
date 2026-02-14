@@ -1,0 +1,6 @@
+{
+  "enabledPlugins": {
+    "claude-mem@insightdigit-marketplace": true,
+    "claudekit-engineer@insightdigit-marketplace": true
+  }
+}
