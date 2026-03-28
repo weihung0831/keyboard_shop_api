@@ -63,6 +63,7 @@ class EcpayService
             'ItemName' => $this->buildItemName($order),
             'ReturnURL' => $this->return_url,
             'ChoosePayment' => 'Credit',
+            'EncryptType' => 1,
         ];
 
         if (! empty($this->order_result_url)) {
@@ -70,7 +71,6 @@ class EcpayService
         }
 
         $input['CheckMacValue'] = $this->generateCheckMacValue($input);
-        $input['EncryptType'] = 1;
 
         // 產生自動提交表單 HTML
         $auto_submit = $this->factory->create('AutoSubmitFormService');
@@ -139,7 +139,7 @@ class EcpayService
      */
     private function generateCheckMacValue(array $params): string
     {
-        unset($params['CheckMacValue'], $params['EncryptType']);
+        unset($params['CheckMacValue']);
 
         uksort($params, 'strcasecmp');
 
