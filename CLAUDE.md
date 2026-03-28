@@ -1,3 +1,31 @@
+# Keyboard Shop API
+
+鍵盤電商後端 API，使用 Laravel 12 + Sanctum 認證，提供 RESTful API 供前端使用。
+
+## 快速指令
+
+```bash
+composer run setup    # 安裝依賴、產生 key、執行 migration
+composer run dev      # 啟動 server + queue + logs（concurrently）
+php artisan test      # 執行測試
+vendor/bin/pint --dirty  # 格式化已修改的檔案
+```
+
+## 架構概要
+
+- **API 前綴**: `/api/v1/`
+- **認證**: Laravel Sanctum（Bearer Token）
+- **資料庫**: SQLite（預設）
+- **Models**: User, Product, ProductCategory, ProductImage, Cart, CartItem, Order, OrderItem
+- **Controller 模組**: Auth, User, Product, Category, Cart, Order（各自獨立資料夾）
+
+## 關鍵模式與注意事項
+
+- **購物車雙模式**: 會員用 Bearer Token，訪客用 `X-Session-Id` Header；登入後可呼叫 `POST /cart/merge` 合併
+- **Slug/ID 路由**: 產品與分類的 show 路由接受 ID 或 slug（`{idOrSlug}`）
+- **登入限流**: `POST /auth/login` 限制 1 分鐘內最多 5 次
+- **訂單**: 需認證，支援建立、查看、統計、取消
+
 # 全域規則
 
 ## 回答語言

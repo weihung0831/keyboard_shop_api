@@ -1,59 +1,122 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Keyboard Shop API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+鍵盤電商後端 RESTful API，基於 Laravel 12 建構。
 
-## About Laravel
+## 技術棧
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **PHP** 8.4 / **Laravel** 12
+- **認證**: Laravel Sanctum（Bearer Token）
+- **資料庫**: SQLite（預設）
+- **測試**: PHPUnit 11
+- **程式碼風格**: Laravel Pint
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 快速開始
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 環境需求
 
-## Learning Laravel
+- PHP >= 8.4
+- Composer
+- Node.js（用於 concurrently 開發伺服器）
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### 安裝與啟動
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+# 一鍵設定（安裝依賴、產生 key、執行 migration）
+composer run setup
 
-## Laravel Sponsors
+# 啟動開發環境（server + queue + logs）
+composer run dev
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 常用指令
 
-### Premium Partners
+```bash
+php artisan test              # 執行測試
+vendor/bin/pint --dirty       # 格式化已修改的檔案
+php artisan migrate           # 執行資料庫遷移
+php artisan db:seed           # 填充測試資料
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## API 概覽
 
-## Contributing
+所有 API 路由前綴為 `/api/v1/`。
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 公開路由（無需認證）
 
-## Code of Conduct
+| 方法 | 路徑 | 說明 |
+|------|------|------|
+| POST | `/auth/register` | 會員註冊 |
+| POST | `/auth/login` | 會員登入（限流：5次/分鐘） |
+| POST | `/auth/forgot-password` | 忘記密碼 |
+| POST | `/auth/reset-password` | 重設密碼 |
+| GET | `/categories` | 分類列表 |
+| GET | `/categories/{idOrSlug}` | 分類詳情 |
+| GET | `/products` | 產品列表（支援分頁、搜尋、篩選） |
+| GET | `/products/search/suggestions` | 搜尋建議 |
+| GET | `/products/{idOrSlug}` | 產品詳情 |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 購物車（支援會員與訪客）
 
-## Security Vulnerabilities
+會員使用 Bearer Token，訪客使用 `X-Session-Id` Header。
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+| 方法 | 路徑 | 說明 |
+|------|------|------|
+| GET | `/cart` | 取得購物車 |
+| POST | `/cart/items` | 加入購物車 |
+| PUT | `/cart/items/{id}` | 更新數量 |
+| DELETE | `/cart/items/{id}` | 移除項目 |
+| DELETE | `/cart` | 清空購物車 |
+| POST | `/cart/merge` | 合併訪客購物車（需認證） |
 
-## License
+### 需認證路由
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| 方法 | 路徑 | 說明 |
+|------|------|------|
+| POST | `/auth/logout` | 登出 |
+| GET | `/user/profile` | 取得個人資料 |
+| PUT | `/user/profile` | 更新個人資料 |
+| PUT | `/user/change-password` | 修改密碼 |
+| GET | `/orders` | 訂單列表 |
+| GET | `/orders/stats` | 訂單統計 |
+| POST | `/orders` | 建立訂單 |
+| GET | `/orders/{id}` | 訂單詳情 |
+| PUT | `/orders/{id}/cancel` | 取消訂單 |
+
+## 專案結構
+
+```
+app/
+├── Http/
+│   ├── Controllers/
+│   │   ├── Auth/          # 認證（註冊、登入、密碼重設）
+│   │   ├── Cart/          # 購物車
+│   │   ├── Category/      # 產品分類
+│   │   ├── Order/         # 訂單
+│   │   ├── Product/       # 產品
+│   │   └── User/          # 會員資料
+│   ├── Requests/          # Form Request 驗證
+│   └── Resources/         # API Resource 回應格式
+├── Models/                # Eloquent Models
+database/
+├── factories/             # 測試工廠
+├── migrations/            # 資料庫遷移
+└── seeders/               # 資料填充
+tests/Feature/             # 功能測試（依模組分類）
+```
+
+## 測試
+
+```bash
+# 執行全部測試
+php artisan test
+
+# 執行特定模組測試
+php artisan test tests/Feature/Cart/CartTest.php
+
+# 執行特定測試方法
+php artisan test --filter=testName
+```
+
+## 授權條款
+
+MIT License
