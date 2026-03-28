@@ -23,7 +23,7 @@ class OrderRepository
      */
     public function findById(int $id, ?int $user_id = null): ?Order
     {
-        $query = Order::with(['items', 'user']);
+        $query = Order::with(['items', 'user', 'payment']);
 
         // 如果指定會員 ID，則限制只能查詢該會員的訂單
         if ($user_id !== null) {
@@ -42,7 +42,7 @@ class OrderRepository
      */
     public function findByOrderNumber(string $order_number, ?int $user_id = null): ?Order
     {
-        $query = Order::with(['items', 'user'])
+        $query = Order::with(['items', 'user', 'payment'])
             ->where('order_number', $order_number);
 
         if ($user_id !== null) {
@@ -62,7 +62,7 @@ class OrderRepository
      */
     public function getByUserId(int $user_id, array $filters = [], int $per_page = 10): LengthAwarePaginator
     {
-        $query = Order::with(['items'])
+        $query = Order::with(['items', 'payment'])
             ->forUser($user_id);
 
         // 狀態篩選
@@ -95,7 +95,7 @@ class OrderRepository
      */
     public function getAllByUserId(int $user_id, ?string $status = null): Collection
     {
-        $query = Order::with(['items'])
+        $query = Order::with(['items', 'payment'])
             ->forUser($user_id);
 
         if ($status !== null) {
