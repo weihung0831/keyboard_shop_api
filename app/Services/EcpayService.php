@@ -63,6 +63,7 @@ class EcpayService
             'ItemName' => $this->buildItemName($order),
             'ReturnURL' => $this->return_url,
             'ChoosePayment' => 'Credit',
+            'IgnorePayment' => 'WebATM#ATM#CVS#BARCODE#ApplePay#TWQR',
             'EncryptType' => 1,
         ];
 
