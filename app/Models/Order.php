@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Order extends Model
 {
@@ -15,9 +16,13 @@ class Order extends Model
      * 訂單狀態常數
      */
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_PROCESSING = 'processing';
+
     public const STATUS_SHIPPED = 'shipped';
+
     public const STATUS_COMPLETED = 'completed';
+
     public const STATUS_CANCELLED = 'cancelled';
 
     /**
@@ -92,6 +97,14 @@ class Order extends Model
     }
 
     /**
+     * 取得訂單的付款記錄
+     */
+    public function payment(): HasOne
+    {
+        return $this->hasOne(Payment::class);
+    }
+
+    /**
      * Scope: 查詢會員訂單
      */
     public function scopeForUser($query, int $user_id)
@@ -124,9 +137,17 @@ class Order extends Model
     }
 
     /**
-     * 檢查是否可取消
+     * 檢查是否可取消（pending 直接取消，processing 需先退款）
      */
     public function canBeCancelled(): bool
+    {
+        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_PROCESSING]);
+    }
+
+    /**
+     * 檢查是否可發起付款
+     */
+    public function canBePaid(): bool
     {
         return $this->status === self::STATUS_PENDING;
     }
@@ -138,6 +159,7 @@ class Order extends Model
     {
         $date = now()->format('Ymd');
         $random = strtoupper(substr(uniqid(), -5));
+
         return "ORD-{$date}-{$random}";
     }
 }

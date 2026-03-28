@@ -167,6 +167,7 @@ class OrderService
 
     /**
      * 取消訂單
+     * pending 訂單直接取消，processing 訂單需先退款
      *
      * @param  int  $order_id  訂單 ID
      * @param  int  $user_id  會員 ID（用於權限驗證）
@@ -176,20 +177,23 @@ class OrderService
      */
     public function cancelOrder(int $order_id, int $user_id): Order
     {
-        // 取得訂單
         $order = $this->order_repository->findById($order_id, $user_id);
 
         if (! $order) {
             throw new InvalidArgumentException('訂單不存在或無權限操作');
         }
 
-        // 驗證訂單是否可取消
         if (! $order->canBeCancelled()) {
-            throw new InvalidArgumentException('僅待付款訂單可取消');
+            throw new InvalidArgumentException('此訂單狀態無法取消');
         }
 
-        // 回補庫存並取消訂單（使用 Transaction 確保原子性）
-        return DB::transaction(function () use ($order) {
+        return DB::transaction(function () use ($order, $order_id, $user_id) {
+            // 已付款（processing）→ 先退款，同一 transaction 內執行
+            if ($order->status === Order::STATUS_PROCESSING) {
+                app(PaymentService::class)->refundPayment($order_id, $user_id);
+            }
+
+            // 回補庫存並取消訂單
             foreach ($order->items as $item) {
                 if ($item->product_id) {
                     Product::where('id', $item->product_id)

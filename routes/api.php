@@ -1,13 +1,13 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\User\UserController;
-use App\Http\Controllers\Product\ProductController;
-use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\Cart\CartController;
+use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\Order\OrderController;
+use App\Http\Controllers\Payment\PaymentController;
+use App\Http\Controllers\Product\ProductController;
+use App\Http\Controllers\User\UserController;
+use Illuminate\Support\Facades\Route;
 
 /**
  * API Version 1 路由定義
@@ -148,6 +148,28 @@ Route::prefix('v1')->group(function () {
             // 取消訂單
             Route::put('/{id}/cancel', [OrderController::class, 'cancel'])
                 ->name('api.orders.cancel');
+
+            // 發起付款
+            Route::post('/{id}/pay', [PaymentController::class, 'initiate'])
+                ->name('api.orders.pay');
+
+            // 查詢訂單付款狀態
+            Route::get('/{id}/payment', [PaymentController::class, 'show'])
+                ->name('api.orders.payment');
+
+            // 申請退款
+            Route::post('/{id}/refund', [PaymentController::class, 'refund'])
+                ->name('api.orders.refund');
         });
+
+        // 使用者付款紀錄列表
+        Route::get('/payments', [PaymentController::class, 'index'])
+            ->name('api.payments.index');
     });
+
+    /**
+     * ECPay 金流回調（無需認證，以 CheckMacValue 驗證）
+     */
+    Route::post('/payments/callback', [PaymentController::class, 'callback'])
+        ->name('api.payments.callback');
 });

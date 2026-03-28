@@ -27,6 +27,7 @@ class OrderResource extends JsonResource
     {
         $this->include_timeline = true;
         $this->timeline = $timeline;
+
         return $this;
     }
 
@@ -50,7 +51,7 @@ class OrderResource extends JsonResource
             // 項目數量（商品種類數）
             'items_count' => $this->when(
                 $this->relationLoaded('items'),
-                fn() => $this->items->count(),
+                fn () => $this->items->count(),
                 0
             ),
 
@@ -78,6 +79,16 @@ class OrderResource extends JsonResource
             'shipped_at' => $this->shipped_at?->toIso8601String(),
             'completed_at' => $this->completed_at?->toIso8601String(),
             'cancelled_at' => $this->cancelled_at?->toIso8601String(),
+
+            // 付款狀態（條件載入）
+            'payment_status' => $this->when(
+                $this->relationLoaded('payment'),
+                fn () => $this->payment?->status
+            ),
+            'payment_status_label' => $this->when(
+                $this->relationLoaded('payment'),
+                fn () => $this->payment?->status_label
+            ),
         ];
 
         // 如果有時間軸資料，則加入
