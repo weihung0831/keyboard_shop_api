@@ -81,6 +81,16 @@ php artisan db:seed           # 填充測試資料
 | POST | `/orders` | 建立訂單 |
 | GET | `/orders/{id}` | 訂單詳情 |
 | PUT | `/orders/{id}/cancel` | 取消訂單 |
+| POST | `/orders/{id}/pay` | 發起付款（跳轉綠界） |
+| GET | `/orders/{id}/payment` | 查詢付款狀態 |
+| POST | `/orders/{id}/refund` | 申請退款 |
+| GET | `/payments` | 付款紀錄列表 |
+
+### 金流回調（無需認證）
+
+| 方法 | 路徑 | 說明 |
+|------|------|------|
+| POST | `/payments/callback` | 綠界 ECPay 回調（以 CheckMacValue 驗證） |
 
 ## 專案結構
 
@@ -92,11 +102,14 @@ app/
 │   │   ├── Cart/          # 購物車
 │   │   ├── Category/      # 產品分類
 │   │   ├── Order/         # 訂單
+│   │   ├── Payment/       # 金流（ECPay 綠界）
 │   │   ├── Product/       # 產品
 │   │   └── User/          # 會員資料
 │   ├── Requests/          # Form Request 驗證
 │   └── Resources/         # API Resource 回應格式
 ├── Models/                # Eloquent Models
+├── Repositories/          # 資料存取層
+├── Services/              # 商業邏輯（含 EcpayService）
 database/
 ├── factories/             # 測試工廠
 ├── migrations/            # 資料庫遷移

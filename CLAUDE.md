@@ -16,8 +16,8 @@ vendor/bin/pint --dirty  # 格式化已修改的檔案
 - **API 前綴**: `/api/v1/`
 - **認證**: Laravel Sanctum（Bearer Token）
 - **資料庫**: SQLite（預設）
-- **Models**: User, Product, ProductCategory, ProductImage, Cart, CartItem, Order, OrderItem
-- **Controller 模組**: Auth, User, Product, Category, Cart, Order（各自獨立資料夾）
+- **Models**: User, Product, ProductCategory, ProductImage, Cart, CartItem, Order, OrderItem, Payment
+- **Controller 模組**: Auth, User, Product, Category, Cart, Order, Payment（各自獨立資料夾）
 
 ## 關鍵模式與注意事項
 
@@ -25,13 +25,24 @@ vendor/bin/pint --dirty  # 格式化已修改的檔案
 - **Slug/ID 路由**: 產品與分類的 show 路由接受 ID 或 slug（`{idOrSlug}`）
 - **登入限流**: `POST /auth/login` 限制 1 分鐘內最多 5 次
 - **訂單**: 需認證，支援建立、查看、統計、取消
+- **ECPay 金流**: 信用卡付款，`POST /orders/{id}/pay` 發起 → 綠界結帳 → `POST /payments/callback` 回調更新狀態
+- **Callback 路由**: `POST /payments/callback` 在 `auth:sanctum` 之外，以 CheckMacValue 驗證
+- **CheckMacValue**: 手動實作（SDK 的 `CheckMacValueService` 有 bug），算法在 `EcpayService::generateCheckMacValue()`
+- **MerchantTradeNo**: 格式 `KB{order_id}{YmdHis}`，最多 20 字元，重新發起會產生新編號
 
-# 全域規則
+## Gotchas
 
-## 回答語言
 - 回答必須使用繁體中文
-
-===
+- Laravel Boost MCP 提供 `search-docs`、`tinker`、`database-query` 等工具，優先使用
+- `vendor/bin/pint --dirty` 格式化修改的檔案
+- `php artisan test --filter=testName` 跑單一測試
+- Laravel 12 無 `app/Http/Middleware/`，middleware 註冊在 `bootstrap/app.php`
+- 使用 FormRequest 驗證，勿在 Controller 內聯驗證
+- 使用 Eloquent ORM，避免 `DB::` 原生查詢
+- PHPUnit 測試；若見 Pest 測試需轉為 PHPUnit
+- ECPay SDK (`ecpay/sdk`) 的 `CheckMacValueService` 計算結果不正確，勿使用
+- ECPay 測試環境商店帳號（3002607）無法隱藏非信用卡付款方式
+- `EncryptType` 必須包含在 CheckMacValue 計算中
 
 <laravel-boost-guidelines>
 === foundation rules ===
