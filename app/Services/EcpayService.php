@@ -5,8 +5,6 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\Payment;
 use Ecpay\Sdk\Factories\Factory;
-use Ecpay\Sdk\Services\AutoSubmitFormService;
-use Ecpay\Sdk\Services\CheckMacValueService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -71,14 +69,10 @@ class EcpayService
             $input['OrderResultURL'] = $this->order_result_url;
         }
 
-        // 先算 CheckMacValue（不含 EncryptType），再加入 EncryptType 到表單
-        /** @var CheckMacValueService $check_mac */
-        $check_mac = $this->factory->create('Ecpay\Sdk\Services\CheckMacValueService');
-        $input['CheckMacValue'] = $check_mac->generate($input);
+        $input['CheckMacValue'] = $this->generateCheckMacValue($input);
         $input['EncryptType'] = 1;
 
         // 產生自動提交表單 HTML
-        /** @var AutoSubmitFormService $auto_submit */
         $auto_submit = $this->factory->create('AutoSubmitFormService');
 
         return $auto_submit->generate($input, $this->service_url, '_self', 'ecpay-checkout', '前往付款');
@@ -86,21 +80,17 @@ class EcpayService
 
     /**
      * 驗證 callback 的 CheckMacValue
-     *
-     * @param  array  $data  callback 原始資料
-     * @return bool 驗證是否通過
      */
     public function verifyCallback(array $data): bool
     {
         try {
-            /** @var CheckMacValueService $check_mac */
-            $check_mac = $this->factory->create('Ecpay\Sdk\Services\CheckMacValueService');
+            $received_mac = $data['CheckMacValue'] ?? '';
+            $calculated_mac = $this->generateCheckMacValue($data);
 
-            return $check_mac->verify($data);
+            return strcasecmp($received_mac, $calculated_mac) === 0;
         } catch (\Exception $e) {
             Log::warning('ECPay callback 驗證失敗', [
                 'error' => $e->getMessage(),
-                'data' => $data,
             ]);
 
             return false;
@@ -110,17 +100,10 @@ class EcpayService
     /**
      * 呼叫退款 API（信用卡退款）
      *
-     * @param  Payment  $payment  付款記錄（需有 trade_no）
-     * @param  int  $amount  退款金額（整數）
-     * @return array 綠界原始回應
-     *
      * @throws \RuntimeException 退款失敗時
      */
     public function requestRefund(Payment $payment, int $amount): array
     {
-        /** @var CheckMacValueService $check_mac */
-        $check_mac = $this->factory->create('Ecpay\Sdk\Services\CheckMacValueService');
-
         $params = [
             'MerchantID' => $this->merchant_id,
             'MerchantTradeNo' => $payment->merchant_trade_no,
@@ -129,7 +112,7 @@ class EcpayService
             'TotalAmount' => $amount,
         ];
 
-        $params['CheckMacValue'] = $check_mac->generate($params);
+        $params['CheckMacValue'] = $this->generateCheckMacValue($params);
 
         try {
             $response = Http::asForm()->post($this->refund_url, $params);
@@ -148,6 +131,34 @@ class EcpayService
             ]);
             throw new \RuntimeException('綠界退款請求失敗：'.$e->getMessage());
         }
+    }
+
+    /**
+     * 產生 CheckMacValue（依照 ECPay 官方規範）
+     * 排序 → 前後加 HashKey/HashIV → URL encode（.NET 相容）→ 小寫 → SHA256 → 大寫
+     */
+    private function generateCheckMacValue(array $params): string
+    {
+        unset($params['CheckMacValue'], $params['EncryptType']);
+
+        uksort($params, 'strcasecmp');
+
+        $str = 'HashKey='.$this->hash_key.'&';
+        foreach ($params as $key => $value) {
+            $str .= $key.'='.$value.'&';
+        }
+        $str .= 'HashIV='.$this->hash_iv;
+
+        $str = urlencode($str);
+
+        // .NET HttpUtility.UrlEncode 相容轉換
+        $str = str_replace(
+            ['%2d', '%5f', '%2e', '%21', '%2a', '%28', '%29', '%20'],
+            ['-', '_', '.', '!', '*', '(', ')', '+'],
+            strtolower($str)
+        );
+
+        return strtoupper(hash('sha256', $str));
     }
 
     /**
