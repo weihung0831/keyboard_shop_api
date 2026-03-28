@@ -45,9 +45,13 @@ class PaymentService
             );
         }
 
-        // 已有 pending payment → 冪等，重新產生表單
+        // 已有 pending payment → 產生新的 MerchantTradeNo 重新發起（ECPay 不接受重複編號）
         if ($order->payment) {
             if ($order->payment->isPending()) {
+                $order->payment->update([
+                    'merchant_trade_no' => Payment::generateMerchantTradeNo($order->id),
+                ]);
+                $order->payment->refresh();
                 $html = $this->ecpay_service->buildPaymentForm($order, $order->payment);
 
                 return ['payment' => $order->payment, 'payment_html' => $html];
