@@ -65,17 +65,17 @@ class EcpayService
             'ItemName' => $this->buildItemName($order),
             'ReturnURL' => $this->return_url,
             'ChoosePayment' => 'Credit',
-            'EncryptType' => 1,
         ];
 
         if (! empty($this->order_result_url)) {
             $input['OrderResultURL'] = $this->order_result_url;
         }
 
-        // 加入 CheckMacValue
+        // 先算 CheckMacValue（不含 EncryptType），再加入 EncryptType 到表單
         /** @var CheckMacValueService $check_mac */
         $check_mac = $this->factory->create('Ecpay\Sdk\Services\CheckMacValueService');
         $input['CheckMacValue'] = $check_mac->generate($input);
+        $input['EncryptType'] = 1;
 
         // 產生自動提交表單 HTML
         /** @var AutoSubmitFormService $auto_submit */
