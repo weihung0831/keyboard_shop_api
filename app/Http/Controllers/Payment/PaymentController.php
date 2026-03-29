@@ -27,6 +27,11 @@ class PaymentController extends Controller
     public function initiate(Request $request, int $id): JsonResponse
     {
         try {
+            // 檢查 ECPay 金流是否啟用
+            if (! \App\Models\SystemSetting::getValue('ecpay_enabled', true)) {
+                return response()->json(['message' => '金流服務目前已關閉'], 503);
+            }
+
             $user_id = $request->user()->id;
             $result = $this->payment_service->initiatePayment($id, $user_id);
 
