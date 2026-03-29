@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Admin\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\BatchToggleProductRequest;
 use App\Http\Requests\Admin\StoreProductImageRequest;
@@ -22,6 +23,8 @@ use Illuminate\Support\Str;
  */
 class AdminProductController extends Controller
 {
+    use EscapesLikeWildcards;
+
     /**
      * 取得所有商品列表（含未上架，支援搜尋與篩選）
      */
@@ -30,9 +33,8 @@ class AdminProductController extends Controller
         try {
             $query = Product::query()->with(['category', 'images']);
 
-            // 關鍵字搜尋（逸出 LIKE 萬用字元防止 SQL 注入）
-            if ($keyword = $request->input('search')) {
-                $escaped = str_replace(['%', '_'], ['\%', '\_'], $keyword);
+            if ($request->filled('search')) {
+                $escaped = $this->escapeLike($request->input('search'));
                 $query->where(function ($q) use ($escaped) {
                     $q->where('name', 'like', "%{$escaped}%")
                         ->orWhere('sku', 'like', "%{$escaped}%")
@@ -265,10 +267,8 @@ class AdminProductController extends Controller
         try {
             $data = $request->validated();
 
-            DB::transaction(function () use ($data) {
-                Product::whereIn('id', $data['product_ids'])
-                    ->update(['is_active' => $data['is_active']]);
-            });
+            Product::whereIn('id', $data['product_ids'])
+                ->update(['is_active' => $data['is_active']]);
 
             $status = $data['is_active'] ? '上架' : '下架';
 
@@ -330,24 +330,19 @@ class AdminProductController extends Controller
 
             $uploadedImages = collect();
             $hasPrimary = $product->images->where('is_primary', true)->isNotEmpty();
-            $isFirstImage = true;
+            $sortOrder = $product->images()->count();
 
-            foreach ($request->file('images') as $file) {
-                // 使用 hashName 產生唯一檔名，儲存至 public disk
+            foreach ($request->file('images') as $index => $file) {
                 $path = $file->store('products', 'public');
                 $imageUrl = Storage::disk('public')->url($path);
 
-                // 若目前無主圖，第一張設為主圖
-                $isPrimary = ! $hasPrimary && $isFirstImage;
-
                 $image = $product->images()->create([
                     'image_url' => $imageUrl,
-                    'is_primary' => $isPrimary,
-                    'sort_order' => $product->images()->count(),
+                    'is_primary' => ! $hasPrimary && $index === 0,
+                    'sort_order' => $sortOrder + $index,
                 ]);
 
                 $uploadedImages->push($image);
-                $isFirstImage = false;
             }
 
             return response()->json([
@@ -439,13 +434,10 @@ class AdminProductController extends Controller
      */
     private function deleteImageFile(string $imageUrl): void
     {
-        // 從 URL 反推 public disk 路徑
         $publicUrl = Storage::disk('public')->url('');
         if (str_starts_with($imageUrl, $publicUrl)) {
             $relativePath = substr($imageUrl, strlen($publicUrl));
-            if (Storage::disk('public')->exists($relativePath)) {
-                Storage::disk('public')->delete($relativePath);
-            }
+            Storage::disk('public')->delete($relativePath);
         }
     }
 }

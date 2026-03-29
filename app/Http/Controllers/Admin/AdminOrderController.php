@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Admin\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use App\Http\Resources\Admin\AdminOrderDetailResource;
@@ -19,6 +20,8 @@ use Illuminate\Support\Facades\DB;
  */
 class AdminOrderController extends Controller
 {
+    use EscapesLikeWildcards;
+
     /**
      * 允許的狀態流轉對應表
      * key = 目前狀態，value = 允許轉換的目標狀態陣列
@@ -186,11 +189,4 @@ class AdminOrderController extends Controller
         }
     }
 
-    /**
-     * 跳脫 LIKE 查詢的萬用字元（% 和 _）
-     */
-    private function escapeLike(string $value): string
-    {
-        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
-    }
 }

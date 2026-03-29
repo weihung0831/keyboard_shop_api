@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Admin\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreCategoryRequest;
 use App\Http\Requests\Admin\UpdateCategoryRequest;
@@ -16,6 +17,8 @@ use Illuminate\Support\Str;
  */
 class AdminCategoryController extends Controller
 {
+    use EscapesLikeWildcards;
+
     /**
      * 取得分類列表（含停用，附產品數量）
      */
@@ -199,11 +202,4 @@ class AdminCategoryController extends Controller
         ];
     }
 
-    /**
-     * 跳脫 LIKE 查詢的萬用字元（% 和 _）
-     */
-    private function escapeLike(string $value): string
-    {
-        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
-    }
 }
