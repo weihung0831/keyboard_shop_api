@@ -16,8 +16,8 @@ vendor/bin/pint --dirty  # 格式化已修改的檔案
 - **API 前綴**: `/api/v1/`
 - **認證**: Laravel Sanctum（Bearer Token）
 - **資料庫**: SQLite（預設）
-- **Models**: User, Product, ProductCategory, ProductImage, ProductSpecification, Cart, CartItem, Order, OrderItem, Payment, SystemSetting
-- **Controller 模組**: Auth, User, Product, Category, Cart, Order, Payment, Admin（各自獨立資料夾）
+- **Models**: User, Product, ProductCategory, ProductImage, ProductSpecification, Cart, CartItem, Order, OrderItem, Payment, SystemSetting, ContactMessage
+- **Controller 模組**: Auth, User, Product, Category, Cart, Order, Payment, Contact, Admin（各自獨立資料夾）
 - **Services**: AuthService, CartService, CategoryService, ProductService, OrderService, PaymentService, EcpayService, UserService, AdminDashboardService
 - **Resources**: UserResource, ProductResource, ProductCategoryResource, ProductImageResource, CartResource, CartItemResource, OrderResource, OrderItemResource, PaymentResource + Admin（AdminProductResource, AdminOrderResource, AdminOrderDetailResource, AdminUserResource, AdminUserDetailResource, ProductSpecificationResource, SystemSettingResource）
 - **Concerns**: `EscapesLikeWildcards`（`app/Http/Controllers/Admin/Concerns/`）— LIKE 查詢的萬用字元跳脫
@@ -45,7 +45,10 @@ bootstrap/app.php       # Middleware、例外、路由註冊
 - **訂單**: 需認證，支援建立、查看、統計、取消、退款（`POST /orders/{id}/refund`）
 - **密碼重設**: `POST /auth/forgot-password` 發送重設連結 → `POST /auth/reset-password` 重設
 - **商品規格**: Admin 可管理商品規格（CRUD），對應 `ProductSpecification` model
-- **Admin 系統**: RBAC 權限控管，`EnsureAdmin` middleware alias + FormRequest `authorize()` 驗證；`super_admin` 可管理系統設定，一般 `admin` 可管理商品/訂單/會員/分類/儀表板
+- **Admin 系統**: RBAC 權限控管，`EnsureAdmin` middleware alias + FormRequest `authorize()` 驗證；`super_admin` 可管理系統設定/刪除會員，一般 `admin` 可管理商品/訂單/會員/分類/儀表板/客服訊息
+- **客服留言**: `POST /contact` 公開端點（無需認證），Admin 可在後台查看/標記已讀/刪除
+- **公開設定**: `GET /settings` 回傳系統設定（site_name, shipping_fee 等），前端動態讀取
+- **運費/免運**: 從 SystemSetting 讀取 `shipping_fee` 和 `free_shipping_threshold`，訂單建立時動態計算
 - **ECPay 金流**: 信用卡付款，`POST /orders/{id}/pay` 發起 → 綠界結帳 → `POST /payments/callback` 回調更新狀態
 - **Callback 路由**: `POST /payments/callback` 在 `auth:sanctum` 之外，以 CheckMacValue 驗證
 - **CheckMacValue**: 手動實作（SDK 的 `CheckMacValueService` 有 bug），算法在 `EcpayService::generateCheckMacValue()`
@@ -64,6 +67,9 @@ bootstrap/app.php       # Middleware、例外、路由註冊
 - ECPay SDK (`ecpay/sdk`) 的 `CheckMacValueService` 計算結果不正確，勿使用
 - ECPay 測試環境商店帳號（3002607）無法隱藏非信用卡付款方式
 - `EncryptType` 必須包含在 CheckMacValue 計算中
+- Zeabur 部署：`composer.json` 的 `post-autoload-dump` 自動執行 `storage:link`；需掛載 Persistent Volume 到 `/app/storage/app/public` 以保留上傳檔案
+- `User.role` 不在 `$fillable` 中（防提權），修改角色用 `$user->role = ...; $user->save()`
+- `User.orders()` 關聯有預設 `latest()` 排序，`groupBy` 查詢前需加 `->reorder()` 避免 MySQL `only_full_group_by` 錯誤
 
 <laravel-boost-guidelines>
 === foundation rules ===

@@ -50,6 +50,8 @@ php artisan db:seed           # 填充測試資料
 | POST | `/auth/login` | 會員登入（限流：5次/分鐘） |
 | POST | `/auth/forgot-password` | 忘記密碼 |
 | POST | `/auth/reset-password` | 重設密碼 |
+| GET | `/settings` | 系統設定（site_name、運費等） |
+| POST | `/contact` | 客服留言 |
 | GET | `/categories` | 分類列表 |
 | GET | `/categories/{idOrSlug}` | 分類詳情 |
 | GET | `/products` | 產品列表（支援分頁、搜尋、篩選） |
@@ -118,6 +120,9 @@ php artisan db:seed           # 填充測試資料
 | GET | `/admin/settings` | 系統設定列表 |
 | PUT | `/admin/settings` | 更新系統設定（僅 super_admin） |
 | PUT | `/admin/settings/batch` | 批次更新設定（僅 super_admin） |
+| GET | `/admin/contact-messages` | 客服留言列表 |
+| PATCH | `/admin/contact-messages/{id}/read` | 標記已讀 |
+| DELETE | `/admin/contact-messages/{id}` | 刪除留言 |
 
 ### 金流回調（無需認證）
 
@@ -125,17 +130,47 @@ php artisan db:seed           # 填充測試資料
 |------|------|------|
 | POST | `/payments/callback` | 綠界 ECPay 回調（以 CheckMacValue 驗證） |
 
+## 關鍵功能
+
+### 會員與權限管理
+- **認證**: Laravel Sanctum（Bearer Token）
+- **RBAC**: 三層角色（user、admin、super_admin），由 `EnsureAdmin` middleware 控管
+- **購物車雙模式**: 認證用 Bearer Token，訪客用 `X-Session-Id` Header；登入後可合併
+
+### 商品與規格管理
+- **ProductSpecification**: 取代 JSON 欄位，獨立模型支援完整 CRUD
+- 管理員可管理商品圖片、規格、上下架狀態
+
+### 系統設定與動態配置
+- **SystemSetting**: 集中儲存運費、免運門檻、ECPay 開啟狀態等
+- **GET /settings**: 公開端點供前端動態讀取配置
+- `ecpay_enabled` 開關控制支付功能可用性
+
+### 訂單與支付
+- **完整狀態流程**: pending → processing → shipped → delivered → cancelled 等
+- **ECPay 金流**: 信用卡支付，CheckMacValue 手動驗證（SDK 有 bug）
+- **自動計算運費**: 根據 SystemSetting 的 `shipping_fee` 與 `free_shipping_threshold` 動態計算
+
+### 客服系統
+- **POST /contact**: 公開留言端點，訪客與會員均可提交
+- **Admin 後台**: 查看、標記已讀、刪除留言
+
+### 部署
+- **Zeabur**: 支援持久化儲存（Persistent Volume 掛載至 `/app/storage/app/public`）
+- **composer.json** 自動執行 `storage:link`
+
 ## 專案結構
 
 ```
 app/
 ├── Http/
 │   ├── Controllers/
-│   │   ├── Admin/         # 管理後台（商品、訂單、會員、分類、儀表板、設定）
+│   │   ├── Admin/         # 管理後台（商品、訂單、會員、分類、儀表板、設定、客服訊息）
 │   │   │   └── Concerns/  # EscapesLikeWildcards（LIKE 萬用字元跳脫）
 │   │   ├── Auth/          # 認證（註冊、登入、密碼重設）
 │   │   ├── Cart/          # 購物車
 │   │   ├── Category/      # 產品分類
+│   │   ├── Contact/       # 客服留言
 │   │   ├── Order/         # 訂單
 │   │   ├── Payment/       # 金流（ECPay 綠界）
 │   │   ├── Product/       # 產品
@@ -143,17 +178,18 @@ app/
 │   ├── Middleware/         # EnsureAdmin（RBAC 權限）
 │   ├── Requests/          # Form Request 驗證
 │   └── Resources/         # API Resource 回應格式
-├── Models/                # Eloquent Models
-├── Repositories/          # 資料存取層
-├── Services/              # 商業邏輯（含 EcpayService）
+├── Models/                # Eloquent Models（含 ProductSpecification, SystemSetting, ContactMessage）
+├── Services/              # 商業邏輯（含 EcpayService, AdminDashboardService）
 database/
 ├── factories/             # 測試工廠
 ├── migrations/            # 資料庫遷移
-└── seeders/               # ProductCategorySeeder, ProductSeeder, SystemSettingSeeder
-tests/Feature/             # 功能測試（依模組分類）
+└── seeders/               # 測試資料種子
+tests/Feature/             # 功能測試（289+ 測試）
 ```
 
 ## 測試
+
+289+ PHPUnit 測試涵蓋認證、購物車、訂單、支付、管理員、產品規格等功能。
 
 ```bash
 # 執行全部測試
