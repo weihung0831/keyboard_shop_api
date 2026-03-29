@@ -39,6 +39,9 @@ class UserResource extends JsonResource
             // 地址（選填）
             'address' => $this->address,
 
+            // 使用者角色
+            'role' => $this->role ?? 'user',
+
             // 建立時間
             'created_at' => $this->created_at->toIso8601String(),
 
