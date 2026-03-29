@@ -83,8 +83,13 @@ class OrderService
                 ]));
             }
 
-            // 計算訂單金額
+            // 計算訂單金額（含免運門檻判斷）
             $shipping_fee = $this->calculateShippingFee($shipping_data['shipping_method'] ?? 'standard');
+            $subtotal = $cart->items->sum(fn ($item) => $item->quantity * $item->price);
+            $free_threshold = (float) \App\Models\SystemSetting::getValue('free_shipping_threshold', 1500);
+            if ($subtotal >= $free_threshold) {
+                $shipping_fee = 0;
+            }
             $totals = $this->calculateOrderTotals($cart, $shipping_fee);
 
             // 建立訂單
@@ -324,14 +329,15 @@ class OrderService
      */
     public function calculateShippingFee(string $shipping_method): float
     {
-        // 運費設定（可依需求調整或從設定檔讀取）
+        $standard_fee = (float) \App\Models\SystemSetting::getValue('shipping_fee', 60);
+
         $shipping_fees = [
-            'standard' => 60,       // 標準配送
-            'express' => 150,       // 快速配送
-            'store_pickup' => 0,    // 門市取貨
+            'standard' => $standard_fee,
+            'express' => $standard_fee * 2.5,
+            'store_pickup' => 0,
         ];
 
-        return $shipping_fees[$shipping_method] ?? 60;
+        return $shipping_fees[$shipping_method] ?? $standard_fee;
     }
 
     /**
