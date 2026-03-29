@@ -291,15 +291,15 @@ class AdminDashboardTest extends TestCase
     }
 
     /**
-     * TC-DASH-009: 只計算未取消且已付款的訂單數
-     * 驗證 orders.total 只計算已付款訂單，不含待付款和已取消
+     * TC-DASH-009: 訂單 total 計算全部非取消訂單（含未付款）
+     * 驗證 orders.total 計算非取消訂單數，排除已取消
      *
      * @test
      */
-    public function orders_total_excludes_pending_and_cancelled(): void
+    public function orders_total_excludes_cancelled_only(): void
     {
         // Arrange
-        Order::factory()->pending()->create(); // 待付款，不計
+        Order::factory()->pending()->create(); // 待付款，計入
         Order::factory()->processing()->create(['paid_at' => now()]); // 已付款，計入
         Order::factory()->cancelled()->create(); // 已取消，不計
 
@@ -307,9 +307,9 @@ class AdminDashboardTest extends TestCase
         $response = $this->actingAs($this->admin, 'sanctum')
             ->getJson('/api/v1/admin/dashboard/stats?period=today');
 
-        // Assert: 只有 1 筆已付款訂單
+        // Assert: 2 筆非取消訂單（pending + processing）
         $response->assertStatus(200)
-            ->assertJsonPath('data.orders.total', 1);
+            ->assertJsonPath('data.orders.total', 2);
     }
 
     /**

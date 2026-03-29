@@ -164,9 +164,20 @@ class AdminDashboardService
         ?Carbon $previous_end,
         bool $is_all
     ): array {
-        // 計算非取消、已付款的當期訂單數
-        $current_count = (float) $this->validOrderQuery($current_start, $current_end)->count();
-        $previous_count = $is_all ? 0.0 : (float) $this->validOrderQuery($previous_start, $previous_end)->count();
+        // 計算當期全部訂單數（含未付款，排除已取消）
+        $order_query = Order::query()->where('status', '!=', Order::STATUS_CANCELLED);
+        if ($current_start !== null && $current_end !== null) {
+            $order_query->whereBetween('created_at', [$current_start, $current_end]);
+        }
+        $current_count = (float) $order_query->count();
+
+        $previous_count = 0.0;
+        if (! $is_all && $previous_start !== null && $previous_end !== null) {
+            $previous_count = (float) Order::query()
+                ->where('status', '!=', Order::STATUS_CANCELLED)
+                ->whereBetween('created_at', [$previous_start, $previous_end])
+                ->count();
+        }
 
         // 計算當前 pending / processing 數量（不限期間）
         $pending_count = Order::query()
