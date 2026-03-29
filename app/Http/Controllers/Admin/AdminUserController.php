@@ -179,4 +179,42 @@ class AdminUserController extends Controller
         }
     }
 
+    /**
+     * 刪除會員（僅 super_admin）
+     * 不可刪除自己；有訂單的會員不可刪除
+     */
+    public function destroy(Request $request, int $id): JsonResponse
+    {
+        try {
+            /** @var User $operator */
+            $operator = $request->user();
+
+            if (! $operator->isSuperAdmin()) {
+                return response()->json(['message' => '權限不足，只有超級管理員可以刪除會員'], 403);
+            }
+
+            if ($operator->id === $id) {
+                return response()->json(['message' => '不可刪除自己'], 422);
+            }
+
+            $user = User::withCount('orders')->find($id);
+
+            if (! $user) {
+                return response()->json(['message' => '會員不存在'], 404);
+            }
+
+            if ($user->orders_count > 0) {
+                return response()->json(['message' => "此會員有 {$user->orders_count} 筆訂單，無法刪除"], 422);
+            }
+
+            $user->delete();
+
+            return response()->json(['message' => '會員已刪除']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => '刪除會員失敗',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

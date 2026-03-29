@@ -201,6 +201,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/', [AdminUserController::class, 'index']);
             Route::get('/{id}', [AdminUserController::class, 'show']);
             Route::patch('/{id}/role', [AdminUserController::class, 'updateRole']);
+            Route::delete('/{id}', [AdminUserController::class, 'destroy']);
         });
 
         /**
