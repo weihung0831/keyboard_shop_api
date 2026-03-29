@@ -175,6 +175,16 @@ Route::prefix('v1')->group(function () {
     });
 
     /**
+     * 公開系統設定（無需認證）
+     */
+    Route::get('/settings', function () {
+        $settings = \App\Models\SystemSetting::all()
+            ->mapWithKeys(fn ($s) => [$s->key => $s->value]);
+
+        return response()->json(['data' => $settings]);
+    })->name('api.settings.public');
+
+    /**
      * ECPay 金流回調（無需認證，以 CheckMacValue 驗證）
      */
     Route::post('/payments/callback', [PaymentController::class, 'callback'])
