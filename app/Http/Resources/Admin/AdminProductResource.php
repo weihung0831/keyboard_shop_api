@@ -1,14 +1,16 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Admin;
 
+use App\Http\Resources\ProductCategoryResource;
+use App\Http\Resources\ProductImageResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * 產品資源轉換器
+ * 管理員商品資源轉換器（含所有欄位，包含未上架商品）
  */
-class ProductResource extends JsonResource
+class AdminProductResource extends JsonResource
 {
     /**
      * 將資源轉換為陣列
@@ -18,36 +20,28 @@ class ProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            // 產品 ID
+            // 商品 ID
             'id' => $this->id,
 
-            // 產品名稱
+            // 商品名稱
             'name' => $this->name,
 
-            // 產品 URL slug
+            // URL slug
             'slug' => $this->slug,
 
-            // 產品描述
+            // 商品描述
             'description' => $this->description,
 
-            // 產品完整介紹
+            // 商品完整介紹
             'content' => $this->content,
 
             // 商品編號
             'sku' => $this->sku,
 
-            // 產品規格
-            'specifications' => $this->when(
-                $this->relationLoaded('specifications'),
-                function () {
-                    return $this->specifications->pluck('spec_value', 'spec_name');
-                }
-            ),
-
-            // 價格
+            // 售價
             'price' => (float) $this->price,
 
-            // 原價（選填）
+            // 原價
             'original_price' => $this->original_price ? (float) $this->original_price : null,
 
             // 庫存數量
@@ -56,21 +50,17 @@ class ProductResource extends JsonResource
             // 是否啟用
             'is_active' => (bool) $this->is_active,
 
-            // 所屬分類
+            // 排序順序
+            'sort_order' => $this->sort_order,
+
+            // 所屬分類（需 eager load）
             'category' => new ProductCategoryResource($this->whenLoaded('category')),
 
-            // 產品圖片列表
+            // 商品規格列表（需 eager load）
+            'specifications' => ProductSpecificationResource::collection($this->whenLoaded('specifications')),
+
+            // 商品圖片列表（需 eager load）
             'images' => ProductImageResource::collection($this->whenLoaded('images')),
-
-            // 主圖 URL（快速存取）
-            'primary_image' => $this->when(
-                $this->relationLoaded('images'),
-                function () {
-                    $primaryImage = $this->images->firstWhere('is_primary', true);
-
-                    return $primaryImage ? $primaryImage->image_url : null;
-                }
-            ),
 
             // 建立時間
             'created_at' => $this->created_at->toIso8601String(),

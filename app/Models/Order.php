@@ -145,6 +145,18 @@ class Order extends Model
     }
 
     /**
+     * 檢查管理員是否可取消（含 shipped 狀態）
+     */
+    public function canBeCancelledByAdmin(): bool
+    {
+        return in_array($this->status, [
+            self::STATUS_PENDING,
+            self::STATUS_PROCESSING,
+            self::STATUS_SHIPPED,
+        ]);
+    }
+
+    /**
      * 檢查是否可發起付款
      */
     public function canBePaid(): bool

@@ -26,7 +26,6 @@ class Product extends Model
         'price',
         'original_price',
         'stock',
-        'specifications',
         'is_active',
         'sort_order',
     ];
@@ -42,7 +41,6 @@ class Product extends Model
             'price' => 'decimal:2',
             'original_price' => 'decimal:2',
             'stock' => 'integer',
-            'specifications' => 'array',
             'is_active' => 'boolean',
             'sort_order' => 'integer',
         ];
@@ -57,12 +55,21 @@ class Product extends Model
     }
 
     /**
+     * 取得商品的所有規格
+     */
+    public function specifications(): HasMany
+    {
+        return $this->hasMany(ProductSpecification::class, 'product_id')
+            ->orderBy('sort_order');
+    }
+
+    /**
      * 取得商品的所有圖片
      */
     public function images(): HasMany
     {
         return $this->hasMany(ProductImage::class, 'product_id')
-                    ->orderBy('sort_order');
+            ->orderBy('sort_order');
     }
 
     /**
@@ -88,7 +95,7 @@ class Product extends Model
     {
         return $query->where(function ($q) use ($keyword) {
             $q->where('name', 'like', "%{$keyword}%")
-              ->orWhere('description', 'like', "%{$keyword}%");
+                ->orWhere('description', 'like', "%{$keyword}%");
         });
     }
 

@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\Product;
-use App\Models\ProductCategory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -137,25 +136,13 @@ class ProductFactory extends Factory
 
         return [
             'name' => $name,
-            'slug' => Str::slug($name) . '-' . fake()->unique()->numberBetween(1, 9999),
+            'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1, 9999),
             'description' => "高品質 {$brand} {$model} 機械鍵盤，採用 {$switch}，{$layout} 配置，{$connection}。適合打字、程式設計與遊戲使用。",
             'content' => $this->generateKeyboardContent($brand, $model, $switch, $layout, $connection),
-            'sku' => strtoupper($brand[0] . $brand[1]) . '-' . fake()->unique()->numerify('####-###'),
+            'sku' => strtoupper($brand[0].$brand[1]).'-'.fake()->unique()->numerify('####-###'),
             'price' => $price,
             'original_price' => $hasDiscount ? round($price * fake()->randomFloat(2, 1.15, 1.35)) : null,
             'stock' => fake()->numberBetween(0, 50),
-            'specifications' => [
-                '品牌' => $brand,
-                '型號' => $model,
-                '軸體' => $switch,
-                '配置' => $layout,
-                '連接方式' => $connection,
-                '背光' => fake()->randomElement(['RGB 全彩', '單色白光', '無背光']),
-                '熱插拔' => fake()->randomElement(['支援', '不支援']),
-                'N-Key Rollover' => '支援',
-                '尺寸' => fake()->numberBetween(290, 440) . ' x ' . fake()->numberBetween(100, 140) . ' x ' . fake()->numberBetween(28, 42) . ' mm',
-                '重量' => fake()->numberBetween(500, 1500) . 'g',
-            ],
             'is_active' => fake()->boolean(95),
             'sort_order' => fake()->numberBetween(0, 100),
         ];
@@ -178,22 +165,13 @@ class ProductFactory extends Factory
 
         return [
             'name' => $name,
-            'slug' => Str::slug($name) . '-' . fake()->unique()->numberBetween(1, 9999),
+            'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1, 9999),
             'description' => "{$brand} {$theme} 主題鍵帽組，{$material}材質，{$profile} 高度。精美配色，手感舒適。",
             'content' => $this->generateKeycapsContent($brand, $theme, $material, $profile),
-            'sku' => 'KC-' . fake()->unique()->numerify('####-###'),
+            'sku' => 'KC-'.fake()->unique()->numerify('####-###'),
             'price' => $price,
             'original_price' => $hasDiscount ? round($price * 1.2) : null,
             'stock' => fake()->numberBetween(0, 30),
-            'specifications' => [
-                '品牌' => $brand,
-                '主題' => $theme,
-                '軸體' => '適用 MX 相容軸',
-                '材質' => $material,
-                '配置' => fake()->randomElement(['104鍵', '108鍵', '129鍵', '139鍵']),
-                '相容性' => 'Cherry MX 及相容軸體',
-                '包裝內容' => '鍵帽組 + 收納盒',
-            ],
             'is_active' => fake()->boolean(95),
             'sort_order' => fake()->numberBetween(0, 100),
         ];
@@ -220,25 +198,13 @@ class ProductFactory extends Factory
 
         return [
             'name' => $name,
-            'slug' => Str::slug($name) . '-' . fake()->unique()->numberBetween(1, 9999),
+            'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1, 9999),
             'description' => "{$brand} {$type}，{$switchType}手感，{$quantity}。適合 DIY 客製化鍵盤使用。",
             'content' => $this->generateSwitchesContent($brand, $type, $switchType),
-            'sku' => 'SW-' . fake()->unique()->numerify('####-###'),
+            'sku' => 'SW-'.fake()->unique()->numerify('####-###'),
             'price' => $price,
             'original_price' => $hasDiscount ? round($price * 1.15) : null,
             'stock' => fake()->numberBetween(0, 200),
-            'specifications' => [
-                '品牌' => $brand,
-                '型號' => $type,
-                '軸體' => "{$brand} {$type}",
-                '類型' => $switchType,
-                '配置' => $quantity,
-                '觸發力度' => fake()->numberBetween(35, 67) . 'g',
-                '觸發行程' => fake()->randomFloat(1, 1.8, 2.2) . 'mm',
-                '總行程' => fake()->randomFloat(1, 3.5, 4.0) . 'mm',
-                '壽命' => fake()->randomElement(['5000萬次', '8000萬次', '1億次']),
-                '工廠潤滑' => fake()->randomElement(['是', '否']),
-            ],
             'is_active' => fake()->boolean(95),
             'sort_order' => fake()->numberBetween(0, 100),
         ];
@@ -260,20 +226,13 @@ class ProductFactory extends Factory
 
         return [
             'name' => $name,
-            'slug' => Str::slug($name) . '-' . fake()->unique()->numberBetween(1, 9999),
+            'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1, 9999),
             'description' => "高品質{$typeName}，{$brand}出品。提升鍵盤手感與使用體驗的必備配件。",
             'content' => $this->generateAccessoriesContent($typeName, $brand),
-            'sku' => 'AC-' . fake()->unique()->numerify('####-###'),
+            'sku' => 'AC-'.fake()->unique()->numerify('####-###'),
             'price' => $price,
             'original_price' => $hasDiscount ? round($price * 1.2) : null,
             'stock' => fake()->numberBetween(0, 100),
-            'specifications' => [
-                '類型' => $typeName,
-                '品牌/款式' => $brand,
-                '軸體' => '通用配件',
-                '配置' => '通用',
-                '適用範圍' => '通用 / 機械鍵盤',
-            ],
             'is_active' => fake()->boolean(95),
             'sort_order' => fake()->numberBetween(0, 100),
         ];
@@ -299,26 +258,13 @@ class ProductFactory extends Factory
 
         return [
             'name' => $name,
-            'slug' => Str::slug($name) . '-' . fake()->unique()->numberBetween(1, 9999),
+            'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1, 9999),
             'description' => "{$brand} {$kit} 客製化鍵盤套件，{$material}外殼，{$layout} 配置。不含軸體與鍵帽，適合 DIY 愛好者。",
             'content' => $this->generateCustomKitsContent($brand, $kit, $material, $layout, $plate),
-            'sku' => 'CK-' . fake()->unique()->numerify('####-###'),
+            'sku' => 'CK-'.fake()->unique()->numerify('####-###'),
             'price' => $price,
             'original_price' => $hasDiscount ? round($price * 1.25) : null,
             'stock' => fake()->numberBetween(0, 20),
-            'specifications' => [
-                '品牌' => $brand,
-                '型號' => $kit,
-                '軸體' => '客製套件（不含軸體）',
-                '配置' => $layout,
-                '外殼材質' => $material,
-                '定位板' => $plate,
-                '結構' => fake()->randomElement(['Gasket Mount', 'Top Mount', 'Tray Mount', 'Sandwich Mount']),
-                '熱插拔' => fake()->randomElement(['支援', '不支援']),
-                'RGB' => fake()->randomElement(['支援南向 RGB', '支援全彩 RGB', '不支援']),
-                '連接方式' => fake()->randomElement(['USB-C 有線', '藍牙 + 有線', '三模']),
-                '包裝內容' => '外殼、PCB、定位板、穩定器、連接線',
-            ],
             'is_active' => fake()->boolean(95),
             'sort_order' => fake()->numberBetween(0, 100),
         ];
@@ -481,6 +427,7 @@ HTML;
     {
         return $this->state(function (array $attributes) {
             $price = $attributes['price'] ?? 2000;
+
             return [
                 'original_price' => $price * 1.3,
             ];

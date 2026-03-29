@@ -5,6 +5,7 @@ namespace Tests\Feature\Product;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\ProductImage;
+use App\Models\ProductSpecification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -35,15 +36,26 @@ class ProductDetailTest extends TestCase
             'price' => 2990,
             'original_price' => 3490,
             'stock' => 50,
-            'specifications' => [
-                '軸體' => '紅軸',
-                '配置' => '75%',
-                '連接方式' => '藍牙/有線',
-                '背光' => 'RGB',
-                '熱插拔' => '支援',
-            ],
             'is_active' => true,
         ]);
+
+        // 建立商品規格
+        $specData = [
+            '軸體' => '紅軸',
+            '配置' => '75%',
+            '連接方式' => '藍牙/有線',
+            '背光' => 'RGB',
+            '熱插拔' => '支援',
+        ];
+        $sort = 0;
+        foreach ($specData as $name => $value) {
+            ProductSpecification::factory()->create([
+                'product_id' => $product->id,
+                'spec_name' => $name,
+                'spec_value' => $value,
+                'sort_order' => $sort++,
+            ]);
+        }
 
         // 建立商品圖片
         ProductImage::factory()->count(3)->create([
@@ -123,7 +135,7 @@ class ProductDetailTest extends TestCase
         ]);
 
         // Act
-        $response = $this->getJson("/api/v1/products/keychron-k2");
+        $response = $this->getJson('/api/v1/products/keychron-k2');
 
         // Assert
         $response->assertStatus(200)
@@ -249,30 +261,27 @@ class ProductDetailTest extends TestCase
     }
 
     /**
-     * TC-DETAIL-007: Specifications 為 null 時處理
+     * TC-DETAIL-007: 商品沒有規格時回傳空物件
      *
      * @test
      */
-    public function handles_null_specifications()
+    public function handles_empty_specifications()
     {
         // Arrange
         $category = ProductCategory::factory()->create();
         $product = Product::factory()->create([
             'category_id' => $category->id,
-            'specifications' => null,
             'is_active' => true,
         ]);
+        // 不建立任何規格
 
         // Act
         $response = $this->getJson("/api/v1/products/{$product->id}");
 
         // Assert
-        $response->assertStatus(200)
-            ->assertJson([
-                'data' => [
-                    'specifications' => null,
-                ],
-            ]);
+        $response->assertStatus(200);
+        $specs = $response->json('data.specifications');
+        $this->assertEmpty($specs);
     }
 
     /**

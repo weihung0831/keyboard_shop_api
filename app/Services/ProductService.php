@@ -29,29 +29,28 @@ class ProductService
     /**
      * 取得產品列表（支援分頁、搜尋、篩選）
      *
-     * @param array $filters 篩選條件
-     * @return LengthAwarePaginator
+     * @param  array  $filters  篩選條件
      */
     public function getProductList(array $filters = []): LengthAwarePaginator
     {
         // 建立查詢
         $query = Product::query()
-            ->with(['category', 'images'])
+            ->with(['category', 'images', 'specifications'])
             ->active();
 
         // 關鍵字搜尋（支援 search 或 keyword 參數）
         $searchKeyword = $filters['search'] ?? $filters['keyword'] ?? null;
-        if (!empty($searchKeyword)) {
+        if (! empty($searchKeyword)) {
             $query->search($searchKeyword);
         }
 
         // 分類篩選
-        if (!empty($filters['category_id'])) {
+        if (! empty($filters['category_id'])) {
             $query->where('category_id', $filters['category_id']);
         }
 
         // 價格區間篩選
-        if (!empty($filters['min_price']) || !empty($filters['max_price'])) {
+        if (! empty($filters['min_price']) || ! empty($filters['max_price'])) {
             $query->priceRange(
                 $filters['min_price'] ?? null,
                 $filters['max_price'] ?? null
@@ -79,19 +78,20 @@ class ProductService
         // 分頁（預設每頁 12 筆，最大 50 筆）
         $perPage = $filters['per_page'] ?? 12;
         $perPage = min($perPage, 50); // 限制最大值為 50
+
         return $query->paginate($perPage);
     }
 
     /**
      * 取得單一產品詳情（by ID）
      *
-     * @param int $id 產品 ID
-     * @return Product
+     * @param  int  $id  產品 ID
+     *
      * @throws ModelNotFoundException
      */
     public function getProductById(int $id): Product
     {
-        return Product::with(['category', 'images'])
+        return Product::with(['category', 'images', 'specifications'])
             ->active()
             ->findOrFail($id);
     }
@@ -99,13 +99,13 @@ class ProductService
     /**
      * 取得單一產品詳情（by slug）
      *
-     * @param string $slug 產品 slug
-     * @return Product
+     * @param  string  $slug  產品 slug
+     *
      * @throws ModelNotFoundException
      */
     public function getProductBySlug(string $slug): Product
     {
-        return Product::with(['category', 'images'])
+        return Product::with(['category', 'images', 'specifications'])
             ->active()
             ->where('slug', $slug)
             ->firstOrFail();
@@ -114,9 +114,8 @@ class ProductService
     /**
      * 取得搜尋建議
      *
-     * @param string $keyword 搜尋關鍵字（至少 2 字元）
-     * @param int $limit 回傳筆數（預設 10 筆）
-     * @return \Illuminate\Support\Collection
+     * @param  string  $keyword  搜尋關鍵字（至少 2 字元）
+     * @param  int  $limit  回傳筆數（預設 10 筆）
      */
     public function getSearchSuggestions(string $keyword, int $limit = 10): \Illuminate\Support\Collection
     {

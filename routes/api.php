@@ -1,5 +1,12 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminCategoryController;
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminOrderController;
+use App\Http\Controllers\Admin\AdminProductController;
+use App\Http\Controllers\Admin\AdminProductSpecController;
+use App\Http\Controllers\Admin\AdminSettingController;
+use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Cart\CartController;
 use App\Http\Controllers\Category\CategoryController;
@@ -172,4 +179,83 @@ Route::prefix('v1')->group(function () {
      */
     Route::post('/payments/callback', [PaymentController::class, 'callback'])
         ->name('api.payments.callback');
+
+    /**
+     * 管理員 API（需要認證，isAdmin middleware 在各 FormRequest 的 authorize() 驗證）
+     */
+    Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
+
+        /**
+         * 訂單管理
+         */
+        Route::prefix('orders')->group(function () {
+            Route::get('/', [AdminOrderController::class, 'index']);
+            Route::get('/{id}', [AdminOrderController::class, 'show']);
+            Route::patch('/{id}/status', [AdminOrderController::class, 'updateStatus']);
+        });
+
+        /**
+         * 會員管理
+         */
+        Route::prefix('users')->group(function () {
+            Route::get('/', [AdminUserController::class, 'index']);
+            Route::get('/{id}', [AdminUserController::class, 'show']);
+            Route::patch('/{id}/role', [AdminUserController::class, 'updateRole']);
+        });
+
+        /**
+         * 分類管理
+         */
+        Route::prefix('categories')->group(function () {
+            Route::get('/', [AdminCategoryController::class, 'index']);
+            Route::post('/', [AdminCategoryController::class, 'store']);
+            Route::put('/{id}', [AdminCategoryController::class, 'update']);
+            Route::delete('/{id}', [AdminCategoryController::class, 'destroy']);
+        });
+
+        /**
+         * 儀表板統計
+         */
+        Route::prefix('dashboard')->group(function () {
+            Route::get('/stats', [AdminDashboardController::class, 'stats']);
+        });
+
+        /**
+         * 系統設定（index 任何管理員可查，update/batchUpdate 僅 super_admin）
+         */
+        Route::prefix('settings')->group(function () {
+            Route::get('/', [AdminSettingController::class, 'index']);
+            Route::put('/', [AdminSettingController::class, 'update']);
+            Route::put('/batch', [AdminSettingController::class, 'batchUpdate']);
+        });
+
+        /**
+         * 商品管理
+         * 靜態路由須在 {id} 萬用路由之前定義，避免路由衝突
+         */
+        Route::prefix('products')->middleware('throttle:60,1')->group(function () {
+            // 批次切換上下架（靜態路由優先）
+            Route::post('/batch-toggle', [AdminProductController::class, 'batchToggle']);
+
+            // 低庫存商品列表（靜態路由優先）
+            Route::get('/low-stock', [AdminProductController::class, 'lowStock']);
+
+            // 商品 CRUD
+            Route::get('/', [AdminProductController::class, 'index']);
+            Route::post('/', [AdminProductController::class, 'store']);
+            Route::get('/{id}', [AdminProductController::class, 'show']);
+            Route::put('/{id}', [AdminProductController::class, 'update']);
+            Route::delete('/{id}', [AdminProductController::class, 'destroy']);
+
+            // 商品圖片管理
+            Route::post('/{id}/images', [AdminProductController::class, 'uploadImages']);
+            Route::delete('/{id}/images/{imageId}', [AdminProductController::class, 'deleteImage']);
+
+            // 商品規格管理
+            Route::get('/{id}/specs', [AdminProductSpecController::class, 'index']);
+            Route::post('/{id}/specs', [AdminProductSpecController::class, 'store']);
+            Route::put('/{id}/specs/{specId}', [AdminProductSpecController::class, 'update']);
+            Route::delete('/{id}/specs/{specId}', [AdminProductSpecController::class, 'destroy']);
+        });
+    });
 });
