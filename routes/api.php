@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminMessageController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminProductSpecController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Cart\CartController;
 use App\Http\Controllers\Category\CategoryController;
+use App\Http\Controllers\Contact\ContactController;
 use App\Http\Controllers\Order\OrderController;
 use App\Http\Controllers\Payment\PaymentController;
 use App\Http\Controllers\Product\ProductController;
@@ -185,6 +187,11 @@ Route::prefix('v1')->group(function () {
     })->name('api.settings.public');
 
     /**
+     * 客服留言（公開，無需認證）
+     */
+    Route::post('/contact', [ContactController::class, 'store'])->name('api.contact.store');
+
+    /**
      * ECPay 金流回調（無需認證，以 CheckMacValue 驗證）
      */
     Route::post('/payments/callback', [PaymentController::class, 'callback'])
@@ -238,6 +245,15 @@ Route::prefix('v1')->group(function () {
             Route::get('/', [AdminSettingController::class, 'index']);
             Route::put('/', [AdminSettingController::class, 'update']);
             Route::put('/batch', [AdminSettingController::class, 'batchUpdate']);
+        });
+
+        /**
+         * 客服留言管理
+         */
+        Route::prefix('messages')->group(function () {
+            Route::get('/', [AdminMessageController::class, 'index']);
+            Route::get('/{id}', [AdminMessageController::class, 'show']);
+            Route::delete('/{id}', [AdminMessageController::class, 'destroy']);
         });
 
         /**
