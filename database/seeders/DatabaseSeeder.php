@@ -18,19 +18,25 @@ class DatabaseSeeder extends Seeder
         $this->command->info('🌱 開始建立測試資料...');
 
         // 建立管理員帳號
-        User::factory()->create([
-            'name' => 'Admin',
-            'email' => 'admin@example.com',
-            'password' => bcrypt('password123'),
-            'role' => 'super_admin',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'name' => 'Admin',
+                'password' => bcrypt('password123'),
+                'role' => 'super_admin',
+                'email_verified_at' => now(),
+            ]
+        );
 
         // 建立測試用戶
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => bcrypt('password123'),
-        ]);
+        User::firstOrCreate(
+            ['email' => 'test@example.com'],
+            [
+                'name' => 'Test User',
+                'password' => bcrypt('password123'),
+                'email_verified_at' => now(),
+            ]
+        );
 
         User::factory(49)->create();
 
