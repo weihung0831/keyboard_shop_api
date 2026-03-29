@@ -16,15 +16,20 @@ vendor/bin/pint --dirty  # 格式化已修改的檔案
 - **API 前綴**: `/api/v1/`
 - **認證**: Laravel Sanctum（Bearer Token）
 - **資料庫**: SQLite（預設）
-- **Models**: User, Product, ProductCategory, ProductImage, Cart, CartItem, Order, OrderItem, Payment
-- **Controller 模組**: Auth, User, Product, Category, Cart, Order, Payment（各自獨立資料夾）
+- **Models**: User, Product, ProductCategory, ProductImage, ProductSpecification, Cart, CartItem, Order, OrderItem, Payment, SystemSetting
+- **Controller 模組**: Auth, User, Product, Category, Cart, Order, Payment, Admin（各自獨立資料夾）
+- **Services**: AuthService, CartService, CategoryService, ProductService, OrderService, PaymentService, EcpayService, UserService, AdminDashboardService
+- **Resources**: UserResource, ProductResource, ProductCategoryResource, ProductImageResource, CartResource, CartItemResource, OrderResource, OrderItemResource, PaymentResource + Admin 專用 Resources
 
 ## 關鍵模式與注意事項
 
 - **購物車雙模式**: 會員用 Bearer Token，訪客用 `X-Session-Id` Header；登入後可呼叫 `POST /cart/merge` 合併
 - **Slug/ID 路由**: 產品與分類的 show 路由接受 ID 或 slug（`{idOrSlug}`）
 - **登入限流**: `POST /auth/login` 限制 1 分鐘內最多 5 次
-- **訂單**: 需認證，支援建立、查看、統計、取消
+- **訂單**: 需認證，支援建立、查看、統計、取消、退款（`POST /orders/{id}/refund`）
+- **密碼重設**: `POST /auth/forgot-password` 發送重設連結 → `POST /auth/reset-password` 重設
+- **商品規格**: Admin 可管理商品規格（CRUD），對應 `ProductSpecification` model
+- **Admin 系統**: RBAC 權限控管，`EnsureAdmin` middleware alias + FormRequest `authorize()` 驗證；`super_admin` 可管理系統設定，一般 `admin` 可管理商品/訂單/會員/分類/儀表板
 - **ECPay 金流**: 信用卡付款，`POST /orders/{id}/pay` 發起 → 綠界結帳 → `POST /payments/callback` 回調更新狀態
 - **Callback 路由**: `POST /payments/callback` 在 `auth:sanctum` 之外，以 CheckMacValue 驗證
 - **CheckMacValue**: 手動實作（SDK 的 `CheckMacValueService` 有 bug），算法在 `EcpayService::generateCheckMacValue()`
@@ -36,7 +41,7 @@ vendor/bin/pint --dirty  # 格式化已修改的檔案
 - Laravel Boost MCP 提供 `search-docs`、`tinker`、`database-query` 等工具，優先使用
 - `vendor/bin/pint --dirty` 格式化修改的檔案
 - `php artisan test --filter=testName` 跑單一測試
-- Laravel 12 無 `app/Http/Middleware/`，middleware 註冊在 `bootstrap/app.php`
+- Laravel 12 預設無 `app/Http/Middleware/`，但本專案有自訂 `EnsureAdmin` middleware，alias 為 `admin`，註冊在 `bootstrap/app.php`
 - 使用 FormRequest 驗證，勿在 Controller 內聯驗證
 - 使用 Eloquent ORM，避免 `DB::` 原生查詢
 - PHPUnit 測試；若見 Pest 測試需轉為 PHPUnit

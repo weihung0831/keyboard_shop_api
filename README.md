@@ -86,6 +86,38 @@ php artisan db:seed           # 填充測試資料
 | POST | `/orders/{id}/refund` | 申請退款 |
 | GET | `/payments` | 付款紀錄列表 |
 
+### 管理員路由（需認證 + Admin 權限）
+
+| 方法 | 路徑 | 說明 |
+|------|------|------|
+| GET | `/admin/dashboard/stats` | 儀表板統計 |
+| GET | `/admin/orders` | 訂單列表 |
+| GET | `/admin/orders/{id}` | 訂單詳情 |
+| PATCH | `/admin/orders/{id}/status` | 更新訂單狀態 |
+| GET | `/admin/users` | 會員列表 |
+| GET | `/admin/users/{id}` | 會員詳情 |
+| PATCH | `/admin/users/{id}/role` | 更新會員角色 |
+| GET | `/admin/categories` | 分類列表 |
+| POST | `/admin/categories` | 新增分類 |
+| PUT | `/admin/categories/{id}` | 更新分類 |
+| DELETE | `/admin/categories/{id}` | 刪除分類 |
+| GET | `/admin/products` | 商品列表 |
+| POST | `/admin/products` | 新增商品 |
+| GET | `/admin/products/{id}` | 商品詳情 |
+| PUT | `/admin/products/{id}` | 更新商品 |
+| DELETE | `/admin/products/{id}` | 刪除商品 |
+| POST | `/admin/products/batch-toggle` | 批次上下架 |
+| GET | `/admin/products/low-stock` | 低庫存商品 |
+| POST | `/admin/products/{id}/images` | 上傳商品圖片 |
+| DELETE | `/admin/products/{id}/images/{imageId}` | 刪除商品圖片 |
+| GET | `/admin/products/{id}/specs` | 商品規格列表 |
+| POST | `/admin/products/{id}/specs` | 新增規格 |
+| PUT | `/admin/products/{id}/specs/{specId}` | 更新規格 |
+| DELETE | `/admin/products/{id}/specs/{specId}` | 刪除規格 |
+| GET | `/admin/settings` | 系統設定列表 |
+| PUT | `/admin/settings` | 更新系統設定（僅 super_admin） |
+| PUT | `/admin/settings/batch` | 批次更新設定（僅 super_admin） |
+
 ### 金流回調（無需認證）
 
 | 方法 | 路徑 | 說明 |
@@ -98,6 +130,7 @@ php artisan db:seed           # 填充測試資料
 app/
 ├── Http/
 │   ├── Controllers/
+│   │   ├── Admin/         # 管理後台（商品、訂單、會員、分類、儀表板、設定）
 │   │   ├── Auth/          # 認證（註冊、登入、密碼重設）
 │   │   ├── Cart/          # 購物車
 │   │   ├── Category/      # 產品分類
@@ -105,6 +138,7 @@ app/
 │   │   ├── Payment/       # 金流（ECPay 綠界）
 │   │   ├── Product/       # 產品
 │   │   └── User/          # 會員資料
+│   ├── Middleware/         # EnsureAdmin（RBAC 權限）
 │   ├── Requests/          # Form Request 驗證
 │   └── Resources/         # API Resource 回應格式
 ├── Models/                # Eloquent Models
