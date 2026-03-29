@@ -15,13 +15,13 @@ class SystemSettingSeeder extends Seeder
         $settings = [
             [
                 'key' => 'site_name',
-                'value' => '鍵盤小舖',
+                'value' => 'Axis Keys',
                 'group' => 'general',
                 'description' => '網站名稱',
             ],
             [
                 'key' => 'site_description',
-                'value' => '專業機械鍵盤電商平台',
+                'value' => 'Axis Keys - 您的一站式鍵盤商店',
                 'group' => 'general',
                 'description' => '網站描述',
             ],
