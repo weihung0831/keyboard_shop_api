@@ -349,7 +349,7 @@ class AdminProductController extends Controller
                 'message' => '圖片上傳成功',
                 'data' => $uploadedImages->map(fn ($img) => [
                     'id' => $img->id,
-                    'url' => $img->image_url,
+                    'url' => str_starts_with($img->image_url, 'http') ? $img->image_url : url($img->image_url),
                     'is_primary' => $img->is_primary,
                     'sort_order' => $img->sort_order,
                 ]),

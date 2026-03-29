@@ -21,8 +21,10 @@ class ProductImageResource extends JsonResource
             // 圖片 ID
             'id' => $this->id,
 
-            // 圖片 URL
-            'url' => $this->image_url,
+            // 圖片 URL（完整 URL）
+            'url' => $this->image_url
+                ? (str_starts_with($this->image_url, 'http') ? $this->image_url : url($this->image_url))
+                : null,
 
             // 是否為主圖
             'is_primary' => (bool) $this->is_primary,
