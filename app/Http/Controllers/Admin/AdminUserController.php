@@ -79,7 +79,8 @@ class AdminUserController extends Controller
             }
 
             $status_counts = $user->orders()
-                ->selectRaw('status, count(*) as cnt, sum(total_amount) as revenue')
+                ->reorder()
+                ->selectRaw('status, count(*) as cnt')
                 ->groupBy('status')
                 ->pluck('cnt', 'status')
                 ->toArray();
