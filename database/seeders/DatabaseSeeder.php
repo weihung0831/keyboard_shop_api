@@ -46,6 +46,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ProductCategorySeeder::class,
             ProductSeeder::class,
+            SystemSettingSeeder::class,
         ]);
 
         $this->command->info('🎉 所有測試資料建立完成！');
