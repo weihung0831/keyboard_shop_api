@@ -14,18 +14,7 @@ use Illuminate\Validation\ValidationException;
  */
 class AdminDashboardController extends Controller
 {
-    /**
-     * 儀表板統計服務
-     */
-    private AdminDashboardService $dashboard_service;
-
-    /**
-     * 建構函式
-     */
-    public function __construct(AdminDashboardService $dashboard_service)
-    {
-        $this->dashboard_service = $dashboard_service;
-    }
+    public function __construct(private AdminDashboardService $dashboard_service) {}
 
     /**
      * 取得儀表板統計資料

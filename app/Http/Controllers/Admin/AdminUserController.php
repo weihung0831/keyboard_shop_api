@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Admin\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateUserRoleRequest;
 use App\Http\Resources\Admin\AdminUserDetailResource;
@@ -17,6 +18,8 @@ use Illuminate\Http\Request;
  */
 class AdminUserController extends Controller
 {
+    use EscapesLikeWildcards;
+
     /**
      * 取得會員列表（含搜尋與角色篩選）
      */
@@ -75,18 +78,26 @@ class AdminUserController extends Controller
                 return response()->json(['message' => '會員不存在'], 404);
             }
 
-            // 訂單統計
+            $status_counts = $user->orders()
+                ->selectRaw('status, count(*) as cnt, sum(total_amount) as revenue')
+                ->groupBy('status')
+                ->pluck('cnt', 'status')
+                ->toArray();
+
+            $paid_statuses = [Order::STATUS_PROCESSING, Order::STATUS_SHIPPED, Order::STATUS_COMPLETED];
+            $total_spent = (float) $user->orders()
+                ->whereIn('status', $paid_statuses)
+                ->sum('total_amount');
+
             $order_stats = [
-                'total_count' => $user->orders()->count(),
-                'total_spent' => (float) $user->orders()
-                    ->whereIn('status', [Order::STATUS_PROCESSING, Order::STATUS_SHIPPED, Order::STATUS_COMPLETED])
-                    ->sum('total_amount'),
+                'total_count' => $user->orders_count,
+                'total_spent' => $total_spent,
                 'by_status' => [
-                    Order::STATUS_PENDING => $user->orders()->where('status', Order::STATUS_PENDING)->count(),
-                    Order::STATUS_PROCESSING => $user->orders()->where('status', Order::STATUS_PROCESSING)->count(),
-                    Order::STATUS_SHIPPED => $user->orders()->where('status', Order::STATUS_SHIPPED)->count(),
-                    Order::STATUS_COMPLETED => $user->orders()->where('status', Order::STATUS_COMPLETED)->count(),
-                    Order::STATUS_CANCELLED => $user->orders()->where('status', Order::STATUS_CANCELLED)->count(),
+                    Order::STATUS_PENDING => $status_counts[Order::STATUS_PENDING] ?? 0,
+                    Order::STATUS_PROCESSING => $status_counts[Order::STATUS_PROCESSING] ?? 0,
+                    Order::STATUS_SHIPPED => $status_counts[Order::STATUS_SHIPPED] ?? 0,
+                    Order::STATUS_COMPLETED => $status_counts[Order::STATUS_COMPLETED] ?? 0,
+                    Order::STATUS_CANCELLED => $status_counts[Order::STATUS_CANCELLED] ?? 0,
                 ],
             ];
 
@@ -129,12 +140,10 @@ class AdminUserController extends Controller
             /** @var User $operator */
             $operator = $request->user();
 
-            // authorize() 已確保 super_admin，但雙重防護以防 middleware 配置異常
             if (! $operator->isSuperAdmin()) {
                 return response()->json(['message' => '權限不足，只有超級管理員可以變更角色'], 403);
             }
 
-            // 不可修改自身角色
             if ($operator->id === $id) {
                 return response()->json(['message' => '不可修改自身角色'], 422);
             }
@@ -146,11 +155,6 @@ class AdminUserController extends Controller
             }
 
             $new_role = $request->input('role');
-
-            // admin 不能設定 super_admin（雖然 authorize() 已限制 super_admin 才能進來，此邏輯保留供未來擴充）
-            if (! $operator->isSuperAdmin() && $new_role === User::ROLE_SUPER_ADMIN) {
-                return response()->json(['message' => '權限不足，無法設定超級管理員角色'], 403);
-            }
 
             // 直接賦值（role 不在 $fillable 中）
             $target_user->role = $new_role;
@@ -174,11 +178,4 @@ class AdminUserController extends Controller
         }
     }
 
-    /**
-     * 跳脫 LIKE 查詢的萬用字元（% 和 _）
-     */
-    private function escapeLike(string $value): string
-    {
-        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
-    }
 }

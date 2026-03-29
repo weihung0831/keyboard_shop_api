@@ -90,20 +90,6 @@ class AdminDashboardService
     }
 
     /**
-     * 取得期間標籤
-     */
-    private function getPeriodLabel(string $period): string
-    {
-        return match ($period) {
-            'today' => '今日',
-            '7d' => '近7天',
-            '30d' => '近30天',
-            'all' => '全部時間',
-            default => '近30天',
-        };
-    }
-
-    /**
      * 計算趨勢百分比
      * - 若 is_all 為 true，回傳 null
      * - 若前期 = 0 且當期 > 0，回傳 100

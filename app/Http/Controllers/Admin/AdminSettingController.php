@@ -9,6 +9,7 @@ use App\Http\Resources\Admin\SystemSettingResource;
 use App\Models\SystemSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * 管理後台系統設定控制器
@@ -58,13 +59,17 @@ class AdminSettingController extends Controller
     {
         $validated = $request->validated();
 
-        $updated = [];
+        $updated = DB::transaction(function () use ($validated) {
+            $results = [];
 
-        foreach ($validated['settings'] as $item) {
-            $setting = SystemSetting::where('key', $item['key'])->firstOrFail();
-            $setting->update(['value' => $item['value']]);
-            $updated[] = new SystemSettingResource($setting->fresh());
-        }
+            foreach ($validated['settings'] as $item) {
+                $setting = SystemSetting::where('key', $item['key'])->firstOrFail();
+                $setting->update(['value' => $item['value']]);
+                $results[] = new SystemSettingResource($setting->fresh());
+            }
+
+            return $results;
+        });
 
         return response()->json([
             'message' => '系統設定批次更新成功',
