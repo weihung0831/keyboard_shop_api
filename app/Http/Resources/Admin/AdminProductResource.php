@@ -20,52 +20,21 @@ class AdminProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            // 商品 ID
             'id' => $this->id,
-
-            // 商品名稱
             'name' => $this->name,
-
-            // URL slug
             'slug' => $this->slug,
-
-            // 商品描述
             'description' => $this->description,
-
-            // 商品完整介紹
             'content' => $this->content,
-
-            // 商品編號
             'sku' => $this->sku,
-
-            // 售價
             'price' => (float) $this->price,
-
-            // 原價
             'original_price' => $this->original_price ? (float) $this->original_price : null,
-
-            // 庫存數量
             'stock' => $this->stock,
-
-            // 是否啟用
             'is_active' => (bool) $this->is_active,
-
-            // 排序順序
             'sort_order' => $this->sort_order,
-
-            // 所屬分類（需 eager load）
             'category' => new ProductCategoryResource($this->whenLoaded('category')),
-
-            // 商品規格列表（需 eager load）
             'specifications' => ProductSpecificationResource::collection($this->whenLoaded('specifications')),
-
-            // 商品圖片列表（需 eager load）
             'images' => ProductImageResource::collection($this->whenLoaded('images')),
-
-            // 建立時間
             'created_at' => $this->created_at->toIso8601String(),
-
-            // 更新時間
             'updated_at' => $this->updated_at->toIso8601String(),
         ];
     }
