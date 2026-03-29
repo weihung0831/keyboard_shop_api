@@ -31,6 +31,7 @@ composer run dev
 ### 常用指令
 
 ```bash
+composer run test             # 清除 config cache + 執行測試
 php artisan test              # 執行測試
 vendor/bin/pint --dirty       # 格式化已修改的檔案
 php artisan migrate           # 執行資料庫遷移
@@ -131,6 +132,7 @@ app/
 ├── Http/
 │   ├── Controllers/
 │   │   ├── Admin/         # 管理後台（商品、訂單、會員、分類、儀表板、設定）
+│   │   │   └── Concerns/  # EscapesLikeWildcards（LIKE 萬用字元跳脫）
 │   │   ├── Auth/          # 認證（註冊、登入、密碼重設）
 │   │   ├── Cart/          # 購物車
 │   │   ├── Category/      # 產品分類
@@ -147,7 +149,7 @@ app/
 database/
 ├── factories/             # 測試工廠
 ├── migrations/            # 資料庫遷移
-└── seeders/               # 資料填充
+└── seeders/               # ProductCategorySeeder, ProductSeeder, SystemSettingSeeder
 tests/Feature/             # 功能測試（依模組分類）
 ```
 

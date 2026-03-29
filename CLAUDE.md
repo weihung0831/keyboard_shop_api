@@ -19,7 +19,23 @@ vendor/bin/pint --dirty  # 格式化已修改的檔案
 - **Models**: User, Product, ProductCategory, ProductImage, ProductSpecification, Cart, CartItem, Order, OrderItem, Payment, SystemSetting
 - **Controller 模組**: Auth, User, Product, Category, Cart, Order, Payment, Admin（各自獨立資料夾）
 - **Services**: AuthService, CartService, CategoryService, ProductService, OrderService, PaymentService, EcpayService, UserService, AdminDashboardService
-- **Resources**: UserResource, ProductResource, ProductCategoryResource, ProductImageResource, CartResource, CartItemResource, OrderResource, OrderItemResource, PaymentResource + Admin 專用 Resources
+- **Resources**: UserResource, ProductResource, ProductCategoryResource, ProductImageResource, CartResource, CartItemResource, OrderResource, OrderItemResource, PaymentResource + Admin（AdminProductResource, AdminOrderResource, AdminOrderDetailResource, AdminUserResource, AdminUserDetailResource, ProductSpecificationResource, SystemSettingResource）
+- **Concerns**: `EscapesLikeWildcards`（`app/Http/Controllers/Admin/Concerns/`）— LIKE 查詢的萬用字元跳脫
+
+## 目錄結構
+
+```
+app/
+├── Http/
+│   ├── Controllers/{Auth,User,Product,Category,Cart,Order,Payment,Admin}/
+│   ├── Middleware/EnsureAdmin.php
+│   ├── Requests/{Admin,Auth,Cart,Order,Payment,User}/
+│   └── Resources/Admin/
+├── Models/
+└── Services/
+routes/api.php          # API 路由定義
+bootstrap/app.php       # Middleware、例外、路由註冊
+```
 
 ## 關鍵模式與注意事項
 
