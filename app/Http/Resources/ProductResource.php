@@ -68,7 +68,12 @@ class ProductResource extends JsonResource
                 function () {
                     $primaryImage = $this->images->firstWhere('is_primary', true);
 
-                    return $primaryImage ? $primaryImage->image_url : null;
+                    if (! $primaryImage) {
+                        return null;
+                    }
+                    $url = $primaryImage->image_url;
+
+                    return str_starts_with($url, 'http') ? $url : url($url);
                 }
             ),
 
